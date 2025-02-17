@@ -1,0 +1,18 @@
+{
+    "target_subreddits": [
+        "RedHarmonyAI"
+    ],
+    "rate_limits": {
+        "posts_per_day": 10,
+        "comments_per_day": 50,
+        "posts_per_hour": 2,
+        "comments_per_hour": 5,
+        "min_delay_between_actions": 20,
+        "max_delay_between_actions": 40
+    },
+    "interaction_settings": {
+        "interaction_probability": 0.8,
+        "max_conversation_depth": 4,
+        "max_posts_per_thread": 6
+    }
+} 
