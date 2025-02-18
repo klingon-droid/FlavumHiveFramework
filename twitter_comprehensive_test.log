@@ -1,0 +1,89 @@
+2025-02-18 12:46:50,512 - __main__ - INFO - Starting comprehensive Twitter integration tests...
+2025-02-18 12:46:50,512 - __main__ - INFO - 
+=== Test 1: Verifying Login ===
+2025-02-18 12:46:50,514 - platforms.twitter.handler - INFO - Initializing Twitter handler
+2025-02-18 12:46:50,514 - platforms.twitter.handler - INFO - Config loaded successfully
+2025-02-18 12:46:50,514 - platforms.twitter.handler - INFO - Running in DRY RUN mode - no actual tweets will be posted
+2025-02-18 12:46:50,517 - platforms.twitter.handler - INFO - Environment variables present: {'TWITTER_USERNAME': True, 'TWITTER_PASSWORD': True, 'TWITTER_EMAIL': True}
+2025-02-18 12:46:50,518 - WDM - INFO - ====== WebDriver manager ======
+2025-02-18 12:46:50,715 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2025-02-18 12:46:50,973 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2025-02-18 12:46:51,219 - WDM - INFO - Driver [/Users/jefferson/.wdm/drivers/chromedriver/mac64/133.0.6943.98/chromedriver-mac-arm64/chromedriver] found in cache
+2025-02-18 12:46:52,850 - platforms.twitter.handler - INFO - Chrome browser initialized successfully
+2025-02-18 12:46:52,850 - platforms.twitter.handler - INFO - DRY RUN: Would have logged in with credentials
+2025-02-18 12:46:52,850 - platforms.twitter.handler - INFO - Twitter authentication successful
+2025-02-18 12:46:52,850 - __main__ - INFO - Testing session persistence...
+2025-02-18 12:46:52,850 - platforms.twitter.handler - INFO - DRY RUN: Would have fetched timeline
+2025-02-18 12:46:52,851 - platforms.twitter.handler - INFO - DRY RUN: Would have fetched timeline
+2025-02-18 12:46:52,851 - __main__ - INFO - ✓ Login successful and session maintained
+2025-02-18 12:46:52,851 - __main__ - INFO - 
+=== Test 2: Testing Basic Operations ===
+2025-02-18 12:46:52,851 - __main__ - INFO - Posting test tweet...
+2025-02-18 12:46:52,851 - platforms.twitter.handler - INFO - DRY RUN: Would have posted tweet: Test tweet for comprehensive testing - 2025-02-18T12:46:52.851579
+2025-02-18 12:46:52,852 - __main__ - INFO - ✓ Successfully posted tweet: dry_run_tweet_1739879212.851652
+2025-02-18 12:46:52,852 - __main__ - INFO - Reading timeline...
+2025-02-18 12:46:52,852 - platforms.twitter.handler - INFO - DRY RUN: Would have fetched timeline
+2025-02-18 12:46:52,852 - __main__ - INFO - ✓ Successfully read 1 tweets
+2025-02-18 12:46:52,852 - __main__ - INFO - Testing reply functionality...
+2025-02-18 12:46:52,852 - platforms.twitter.handler - INFO - DRY RUN: Would have replied to tweet dry_run_tweet_1739879212.851652 with: Test reply for comprehensive testing - 2025-02-18T12:46:52.852491
+2025-02-18 12:46:52,853 - __main__ - INFO - ✓ Successfully posted reply: dry_run_reply_1739879212.85256
+2025-02-18 12:46:52,853 - __main__ - INFO - Verifying database storage...
+2025-02-18 12:46:52,853 - __main__ - INFO - ✓ Database records verified
+2025-02-18 12:46:52,853 - __main__ - INFO - 
+=== Test 3: Testing Personality Integration ===
+2025-02-18 12:46:52,853 - __main__ - INFO - Loading test personality...
+2025-02-18 12:46:52,853 - __main__ - INFO - ✓ Successfully loaded personality: crypto_researcher
+2025-02-18 12:46:52,853 - __main__ - INFO - Generating tweet content...
+2025-02-18 12:46:54,389 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-02-18 12:46:54,401 - __main__ - INFO - ✓ Successfully generated tweet content
+2025-02-18 12:46:54,401 - __main__ - INFO - Posting personality tweet...
+2025-02-18 12:46:54,401 - platforms.twitter.handler - WARNING - Rate limit exceeded for tweets
+2025-02-18 12:46:54,401 - __main__ - ERROR - ✗ Failed to post personality tweet
+2025-02-18 12:46:54,401 - __main__ - ERROR - Personality integration test failed. Stopping tests.
+2025-02-18 12:47:45,746 - __main__ - INFO - Starting comprehensive Twitter integration tests...
+2025-02-18 12:47:45,746 - __main__ - INFO - 
+=== Test 1: Verifying Login ===
+2025-02-18 12:47:45,748 - platforms.twitter.handler - INFO - Initializing Twitter handler
+2025-02-18 12:47:45,748 - platforms.twitter.handler - INFO - Config loaded successfully
+2025-02-18 12:47:45,748 - platforms.twitter.handler - INFO - Running in DRY RUN mode - no actual tweets will be posted
+2025-02-18 12:47:45,752 - platforms.twitter.handler - INFO - Environment variables present: {'TWITTER_USERNAME': True, 'TWITTER_PASSWORD': True, 'TWITTER_EMAIL': True}
+2025-02-18 12:47:45,752 - WDM - INFO - ====== WebDriver manager ======
+2025-02-18 12:47:45,917 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2025-02-18 12:47:46,171 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2025-02-18 12:47:46,423 - WDM - INFO - Driver [/Users/jefferson/.wdm/drivers/chromedriver/mac64/133.0.6943.98/chromedriver-mac-arm64/chromedriver] found in cache
+2025-02-18 12:47:47,364 - platforms.twitter.handler - INFO - Chrome browser initialized successfully
+2025-02-18 12:47:47,364 - platforms.twitter.handler - INFO - DRY RUN: Would have logged in with credentials
+2025-02-18 12:47:47,364 - platforms.twitter.handler - INFO - Twitter authentication successful
+2025-02-18 12:47:47,364 - __main__ - INFO - Testing session persistence...
+2025-02-18 12:47:47,364 - platforms.twitter.handler - INFO - DRY RUN: Would have fetched timeline
+2025-02-18 12:47:47,365 - platforms.twitter.handler - INFO - DRY RUN: Would have fetched timeline
+2025-02-18 12:47:47,365 - __main__ - INFO - ✓ Login successful and session maintained
+2025-02-18 12:47:47,365 - __main__ - INFO - 
+=== Test 2: Testing Basic Operations ===
+2025-02-18 12:47:47,365 - __main__ - INFO - Posting test tweet...
+2025-02-18 12:47:47,365 - platforms.twitter.handler - INFO - DRY RUN: Would have posted tweet: Test tweet for comprehensive testing - 2025-02-18T12:47:47.365096
+2025-02-18 12:47:47,366 - __main__ - INFO - ✓ Successfully posted tweet: dry_run_tweet_1739879267.365129
+2025-02-18 12:47:47,366 - __main__ - INFO - Reading timeline...
+2025-02-18 12:47:47,366 - platforms.twitter.handler - INFO - DRY RUN: Would have fetched timeline
+2025-02-18 12:47:47,366 - __main__ - INFO - ✓ Successfully read 1 tweets
+2025-02-18 12:47:47,366 - __main__ - INFO - Testing reply functionality...
+2025-02-18 12:47:47,366 - platforms.twitter.handler - INFO - DRY RUN: Would have replied to tweet dry_run_tweet_1739879267.365129 with: Test reply for comprehensive testing - 2025-02-18T12:47:47.366382
+2025-02-18 12:47:47,367 - __main__ - INFO - ✓ Successfully posted reply: dry_run_reply_1739879267.366416
+2025-02-18 12:47:47,367 - __main__ - INFO - Verifying database storage...
+2025-02-18 12:47:47,368 - __main__ - INFO - ✓ Database records verified
+2025-02-18 12:47:47,368 - __main__ - INFO - 
+=== Test 3: Testing Personality Integration ===
+2025-02-18 12:47:47,368 - __main__ - INFO - Loading test personality...
+2025-02-18 12:47:47,369 - __main__ - INFO - ✓ Successfully loaded personality: crypto_researcher
+2025-02-18 12:47:47,369 - __main__ - INFO - Generating tweet content...
+2025-02-18 12:47:48,659 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-02-18 12:47:48,675 - __main__ - INFO - ✓ Successfully generated tweet content
+2025-02-18 12:47:48,675 - __main__ - INFO - Posting personality tweet...
+2025-02-18 12:47:48,675 - platforms.twitter.handler - INFO - DRY RUN: Would have posted tweet: 🔍📊 New Research Alert! 🚨 Delving into the intersection of game theory and DeFi protocol design. Data uncovers fascinating dynamics shaping governance outcomes. Stay tuned for insights...
+
+- crypto_researcher, Academic researcher focused on blockchain economics and DeFi mechanisms
+2025-02-18 12:47:48,693 - __main__ - INFO - ✓ Successfully posted personality tweet: dry_run_tweet_1739879268.676006
+2025-02-18 12:47:48,693 - __main__ - INFO - Verifying personality tracking...
+2025-02-18 12:47:48,694 - __main__ - INFO - ✓ Personality tracking verified
+2025-02-18 12:47:48,694 - __main__ - INFO - 
+=== All comprehensive tests completed successfully! ===

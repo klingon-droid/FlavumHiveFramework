@@ -1,22 +1,29 @@
-FROM python:3.8-slim
+FROM python:3.13-slim
 
-WORKDIR /app
-
-# Install system dependencies
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    git \
+# Install Chrome and dependencies
+RUN apt-get update && apt-get install -y \
+    wget \
+    gnupg \
+    unzip \
+    && wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
+    && echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list \
+    && apt-get update \
+    && apt-get install -y google-chrome-stable \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
+# Create app directory
+WORKDIR /app
+
+# Copy requirements first to leverage Docker cache
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY . .
 
-# Create volume for persistent database
-VOLUME ["/app/reddit_bot.db"]
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV DISPLAY=:99
 
-# Run the application
-CMD ["python", "main.py"] 
+# Run the bot
+CMD ["python", "continuous_twitter_bot.py"] 

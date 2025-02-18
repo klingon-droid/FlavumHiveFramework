@@ -1,0 +1,110 @@
+2025-02-18 14:14:11,937 - __main__ - INFO - Successfully loaded config
+2025-02-18 14:14:11,937 - __main__ - INFO - Starting continuous Twitter bot...
+2025-02-18 14:14:11,937 - __main__ - INFO - Rate limits: 5 tweets/hour, 30s min delay
+2025-02-18 14:14:11,937 - __main__ - INFO - Posting interval: 0.2-0.4 hours
+2025-02-18 14:14:11,937 - __main__ - INFO - Initializing Twitter handler...
+2025-02-18 14:14:11,937 - platforms.twitter.handler - INFO - Initializing Twitter handler
+2025-02-18 14:14:11,937 - platforms.twitter.handler - INFO - Python version: 3.13.1 (main, Dec  3 2024, 17:59:52) [Clang 16.0.0 (clang-1600.0.26.4)]
+2025-02-18 14:14:11,937 - platforms.twitter.handler - INFO - Operating system: darwin
+2025-02-18 14:14:11,937 - platforms.twitter.handler - INFO - Current working directory: /Users/jefferson/Documents/degen/400MillionDollars-MarketCap-Projects/redharmony-project/FlavumHive
+2025-02-18 14:14:11,937 - platforms.twitter.handler - INFO - Current directory permissions: 755
+2025-02-18 14:14:11,937 - platforms.twitter.handler - INFO - Config loaded successfully
+2025-02-18 14:14:11,937 - platforms.twitter.handler - INFO - Loaded active personality: crypto_researcher
+2025-02-18 14:14:11,942 - platforms.twitter.handler - INFO - Environment variables present: {'TWITTER_USERNAME': True, 'TWITTER_PASSWORD': True, 'TWITTER_EMAIL': True}
+2025-02-18 14:14:11,957 - platforms.twitter.handler - INFO - Existing Chrome processes: 7
+2025-02-18 14:14:11,957 - platforms.twitter.handler - INFO - Starting browser initialization...
+2025-02-18 14:14:12,043 - platforms.twitter.handler - INFO - Chrome version: 133.0.6943.55
+2025-02-18 14:14:12,043 - WDM - INFO - ====== WebDriver manager ======
+2025-02-18 14:14:12,130 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2025-02-18 14:14:12,384 - WDM - INFO - Get LATEST chromedriver version for google-chrome
+2025-02-18 14:14:12,623 - WDM - INFO - Driver [/Users/jefferson/.wdm/drivers/chromedriver/mac64/133.0.6943.98/chromedriver-mac-arm64/chromedriver] found in cache
+2025-02-18 14:14:12,623 - platforms.twitter.handler - INFO - ChromeDriver path: /Users/jefferson/.wdm/drivers/chromedriver/mac64/133.0.6943.98/chromedriver-mac-arm64/chromedriver
+2025-02-18 14:14:12,623 - platforms.twitter.handler - INFO - Current process memory usage: 68.69 MB
+2025-02-18 14:14:12,623 - platforms.twitter.handler - INFO - Current process CPU usage: 0.0%
+2025-02-18 14:14:12,623 - platforms.twitter.handler - INFO - System memory available: 1372.78 MB
+2025-02-18 14:14:12,628 - platforms.twitter.handler - INFO - Terminated existing Chrome process: 31934
+2025-02-18 14:14:12,628 - platforms.twitter.handler - INFO - Terminated existing Chrome process: 31938
+2025-02-18 14:14:12,628 - platforms.twitter.handler - INFO - Terminated existing Chrome process: 31943
+2025-02-18 14:14:12,628 - platforms.twitter.handler - INFO - Terminated existing Chrome process: 31944
+2025-02-18 14:14:12,628 - platforms.twitter.handler - INFO - Terminated existing Chrome process: 31946
+2025-02-18 14:14:12,629 - platforms.twitter.handler - INFO - Terminated existing Chrome process: 31965
+2025-02-18 14:14:12,629 - platforms.twitter.handler - INFO - Terminated existing Chrome process: 32032
+2025-02-18 14:14:14,638 - platforms.twitter.handler - INFO - Chrome flags being used:
+2025-02-18 14:14:14,639 - platforms.twitter.handler - INFO -   --no-sandbox
+2025-02-18 14:14:14,639 - platforms.twitter.handler - INFO -   --disable-dev-shm-usage
+2025-02-18 14:14:14,639 - platforms.twitter.handler - INFO -   --disable-blink-features=AutomationControlled
+2025-02-18 14:14:14,639 - platforms.twitter.handler - INFO -   --disable-background-timer-throttling
+2025-02-18 14:14:14,639 - platforms.twitter.handler - INFO -   --disable-backgrounding-occluded-windows
+2025-02-18 14:14:14,639 - platforms.twitter.handler - INFO -   --disable-renderer-backgrounding
+2025-02-18 14:14:14,639 - platforms.twitter.handler - INFO -   --disable-features=IsolateOrigins,site-per-process
+2025-02-18 14:14:14,639 - platforms.twitter.handler - INFO -   --disable-site-isolation-trials
+2025-02-18 14:14:14,639 - platforms.twitter.handler - INFO -   --ignore-certificate-errors
+2025-02-18 14:14:14,639 - platforms.twitter.handler - INFO -   --disable-web-security
+2025-02-18 14:14:14,639 - platforms.twitter.handler - INFO -   --disable-gpu
+2025-02-18 14:14:14,639 - platforms.twitter.handler - INFO -   --disable-software-rasterizer
+2025-02-18 14:14:14,639 - platforms.twitter.handler - INFO -   --window-size=1920,1080
+2025-02-18 14:14:14,639 - platforms.twitter.handler - INFO -   --start-maximized
+2025-02-18 14:14:14,639 - platforms.twitter.handler - INFO -   --disable-extensions
+2025-02-18 14:14:14,639 - platforms.twitter.handler - INFO -   --disable-popup-blocking
+2025-02-18 14:14:14,639 - platforms.twitter.handler - INFO -   --disable-notifications
+2025-02-18 14:14:14,639 - platforms.twitter.handler - INFO -   --user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36
+2025-02-18 14:14:14,639 - platforms.twitter.handler - INFO -   --lang=en-US
+2025-02-18 14:14:14,639 - platforms.twitter.handler - INFO -   --accept-lang=en-US
+2025-02-18 14:14:17,266 - platforms.twitter.handler - INFO - Driver is responsive
+2025-02-18 14:14:17,267 - platforms.twitter.handler - INFO - Session ID: 8fbf5d7fdef5ff775579110690b974e9
+2025-02-18 14:14:17,268 - platforms.twitter.handler - INFO - JavaScript execution test passed
+2025-02-18 14:14:17,268 - platforms.twitter.handler - INFO - Chrome browser initialized with enhanced stealth measures
+2025-02-18 14:14:17,269 - platforms.twitter.handler - INFO - Driver session created successfully: 8fbf5d7fdef5ff775579110690b974e9
+2025-02-18 14:14:20,821 - platforms.twitter.handler - INFO - Navigated to Twitter login page
+2025-02-18 14:14:26,036 - platforms.twitter.handler - INFO - Entered username
+2025-02-18 14:14:39,397 - platforms.twitter.handler - INFO - No email verification required
+2025-02-18 14:14:42,490 - platforms.twitter.handler - INFO - Successfully logged in to Twitter
+2025-02-18 14:14:42,512 - platforms.twitter.handler - INFO - Twitter authentication successful
+2025-02-18 14:14:42,517 - __main__ - INFO - Twitter handler initialized successfully
+2025-02-18 14:14:42,517 - __main__ - INFO - Using personality: crypto_researcher
+2025-02-18 14:14:44,112 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-02-18 14:14:46,820 - platforms.twitter.handler - INFO - Current URL before posting: https://x.com/home
+2025-02-18 14:14:47,290 - platforms.twitter.handler - INFO - Saved screenshot to debug_twitter/before_post_20250218_141446.png
+2025-02-18 14:14:47,320 - platforms.twitter.handler - INFO - Saved page source to debug_twitter/before_post_20250218_141446.html
+2025-02-18 14:14:47,322 - platforms.twitter.handler - INFO - Current URL: https://x.com/home
+2025-02-18 14:14:47,324 - platforms.twitter.handler - INFO - Navigating to home page first...
+2025-02-18 14:14:51,166 - platforms.twitter.handler - INFO - Redirected to x.com, adjusting selectors...
+2025-02-18 14:14:51,464 - platforms.twitter.handler - INFO - Saved screenshot to debug_twitter/home_page_20250218_141451.png
+2025-02-18 14:14:51,480 - platforms.twitter.handler - INFO - Saved page source to debug_twitter/home_page_20250218_141451.html
+2025-02-18 14:14:51,482 - platforms.twitter.handler - INFO - Current URL: https://x.com/home
+2025-02-18 14:15:01,523 - platforms.twitter.handler - INFO - Found compose button using selector: a[href='/compose/post']
+2025-02-18 14:15:04,107 - platforms.twitter.handler - INFO - Saved screenshot to debug_twitter/after_compose_click_20250218_141503.png
+2025-02-18 14:15:04,129 - platforms.twitter.handler - INFO - Saved page source to debug_twitter/after_compose_click_20250218_141503.html
+2025-02-18 14:15:04,133 - platforms.twitter.handler - INFO - Current URL: https://x.com/compose/post
+2025-02-18 14:15:04,148 - platforms.twitter.handler - INFO - Found tweet input using selector: div[role='textbox'][contenteditable='true']
+2025-02-18 14:15:14,146 - platforms.twitter.handler - INFO - Saved screenshot to debug_twitter/after_input_20250218_141513.png
+2025-02-18 14:15:14,164 - platforms.twitter.handler - INFO - Saved page source to debug_twitter/after_input_20250218_141513.html
+2025-02-18 14:15:14,166 - platforms.twitter.handler - INFO - Current URL: https://x.com/compose/post
+2025-02-18 14:15:34,268 - platforms.twitter.handler - INFO - Found post button using selector: //span[text()='Post']
+2025-02-18 14:15:39,875 - platforms.twitter.handler - INFO - Saved screenshot to debug_twitter/after_post_20250218_141539.png
+2025-02-18 14:15:39,892 - platforms.twitter.handler - INFO - Saved page source to debug_twitter/after_post_20250218_141539.html
+2025-02-18 14:15:39,894 - platforms.twitter.handler - INFO - Current URL: https://x.com/home
+2025-02-18 14:15:39,895 - platforms.twitter.handler - INFO - Attempting to extract tweet ID...
+2025-02-18 14:15:39,895 - platforms.twitter.handler - INFO - Trying selector: a[href*='/status/']
+2025-02-18 14:15:39,903 - platforms.twitter.handler - INFO - Found tweet ID from href: 1891838977599996399
+2025-02-18 14:15:39,903 - __main__ - INFO - Successfully posted tweet with ID: 1891838977599996399
+2025-02-18 14:16:17,642 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2025-02-18 14:16:28,619 - platforms.twitter.handler - ERROR - Failed to reply to tweet: Message: 
+Stacktrace:
+0   chromedriver                        0x0000000104c1ebac cxxbridge1$str$ptr + 2724820
+1   chromedriver                        0x0000000104c1720c cxxbridge1$str$ptr + 2693684
+2   chromedriver                        0x000000010477dafc cxxbridge1$string$len + 93348
+3   chromedriver                        0x00000001047c48f8 cxxbridge1$string$len + 383648
+4   chromedriver                        0x0000000104805b94 cxxbridge1$string$len + 650556
+5   chromedriver                        0x00000001047b8ba0 cxxbridge1$string$len + 335176
+6   chromedriver                        0x0000000104be7664 cxxbridge1$str$ptr + 2498188
+7   chromedriver                        0x0000000104bea978 cxxbridge1$str$ptr + 2511264
+8   chromedriver                        0x0000000104bccd04 cxxbridge1$str$ptr + 2389292
+9   chromedriver                        0x0000000104beb220 cxxbridge1$str$ptr + 2513480
+10  chromedriver                        0x0000000104bbdcec cxxbridge1$str$ptr + 2327828
+11  chromedriver                        0x0000000104c078d4 cxxbridge1$str$ptr + 2629884
+12  chromedriver                        0x0000000104c07a5c cxxbridge1$str$ptr + 2630276
+13  chromedriver                        0x0000000104c16e80 cxxbridge1$str$ptr + 2692776
+14  libsystem_pthread.dylib             0x000000019f7182e4 _pthread_start + 136
+15  libsystem_pthread.dylib             0x000000019f7130fc thread_start + 8
+
