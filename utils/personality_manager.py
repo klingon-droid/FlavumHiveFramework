@@ -19,19 +19,38 @@ class PersonalityManager:
         except Exception as e:
             print(f"Error loading config: {e}. Using defaults.")
             return {
-                "target_subreddits": ["RedHarmonyAI"],
-                "rate_limits": {
-                    "posts_per_day": 20,
-                    "comments_per_day": 100,
-                    "posts_per_hour": 2,
-                    "comments_per_hour": 5,
-                    "min_delay_between_actions": 10,
-                    "max_delay_between_actions": 20
+                "global_settings": {
+                    "debug_mode": False,
+                    "dry_run": False,
+                    "database": {
+                        "path": "bot.db",
+                        "backup_frequency": "daily"
+                    }
                 },
-                "interaction_settings": {
-                    "interaction_probability": 0.7,
-                    "max_conversation_depth": 3,
-                    "max_posts_per_thread": 5
+                "platforms": {
+                    "reddit": {
+                        "enabled": True,
+                        "personality": {
+                            "active": "crypto_researcher",
+                            "settings": {
+                                "add_signature": True,
+                                "auto_reply": True,
+                                "reply_probability": 0.7
+                            }
+                        },
+                        "target_subreddits": ["RedHarmonyAI"],
+                        "rate_limits": {
+                            "posts_per_day": 10,
+                            "comments_per_day": 50,
+                            "posts_per_hour": 2,
+                            "comments_per_hour": 5,
+                            "min_delay_between_actions": 20
+                        },
+                        "interaction_settings": {
+                            "max_conversation_depth": 4,
+                            "max_posts_per_thread": 6
+                        }
+                    }
                 }
             }
 
@@ -42,10 +61,13 @@ class PersonalityManager:
             if filename.endswith('.json'):
                 with open(os.path.join(personality_dir, filename), 'r') as f:
                     personality = json.load(f)
-                    # Update platform-specific settings
+                    # Update platform-specific settings from config
                     if 'platform_settings' in personality:
-                        if 'reddit' in personality['platform_settings']:
-                            personality['platform_settings']['reddit']['subreddits'] = self.config['target_subreddits']
+                        for platform, settings in personality['platform_settings'].items():
+                            if platform in self.config['platforms']:
+                                platform_config = self.config['platforms'][platform]
+                                if 'target_subreddits' in platform_config:
+                                    settings['subreddits'] = platform_config['target_subreddits']
                     self.personalities[personality['name']] = personality
 
     def get_random_personality(self, platform: str = 'reddit') -> Dict:
@@ -55,6 +77,10 @@ class PersonalityManager:
             if 'platform_settings' in p and platform in p['platform_settings']
         ]
         return random.choice(valid_personalities) if valid_personalities else None
+
+    def get_personality(self, name: str) -> Optional[Dict]:
+        """Get a specific personality by name"""
+        return self.personalities.get(name)
 
     def get_personality_for_thread(self, thread_id: str, platform: str = 'reddit') -> Dict:
         """Get the personality that should respond in a thread"""
@@ -109,26 +135,27 @@ class PersonalityManager:
 
     def should_interact(self, post_personality: str, platform: str = 'reddit') -> bool:
         """Decide if we should create an interaction on this post"""
-        interaction_prob = self.config['interaction_settings']['interaction_probability']
-        if platform in self.config.get('platform_rate_limits', {}):
-            # Adjust probability based on platform settings
-            platform_limits = self.config['platform_rate_limits'][platform]
-            if 'interaction_probability' in platform_limits:
-                interaction_prob = platform_limits['interaction_probability']
-        return random.random() < interaction_prob
+        if platform in self.config['platforms']:
+            platform_config = self.config['platforms'][platform]
+            if 'personality' in platform_config:
+                return random.random() < platform_config['personality']['settings'].get('reply_probability', 0.7)
+        return False
 
     def get_platform_settings(self, platform: str) -> Dict:
         """Get platform-specific settings"""
-        return self.config.get('platform_rate_limits', {}).get(platform, {})
+        return self.config['platforms'].get(platform, {})
 
     def get_subreddits(self) -> List[str]:
         """Get configured target subreddits"""
-        return self.config['target_subreddits']
+        reddit_config = self.config['platforms'].get('reddit', {})
+        return reddit_config.get('target_subreddits', ['RedHarmonyAI'])
 
-    def get_rate_limits(self) -> Dict:
+    def get_rate_limits(self, platform: str = 'reddit') -> Dict:
         """Get configured rate limits"""
-        return self.config['rate_limits']
+        platform_config = self.config['platforms'].get(platform, {})
+        return platform_config.get('rate_limits', {})
 
-    def get_interaction_settings(self) -> Dict:
+    def get_interaction_settings(self, platform: str = 'reddit') -> Dict:
         """Get configured interaction settings"""
-        return self.config['interaction_settings'] 
+        platform_config = self.config['platforms'].get(platform, {})
+        return platform_config.get('interaction_settings', {}) 

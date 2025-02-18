@@ -1,3 +1,5 @@
+"""Reddit Platform Handler"""
+
 import praw
 import json
 import os
@@ -7,6 +9,7 @@ from typing import Dict, Optional, List
 
 from utils.db_utils import init_db_connection
 from utils.personality_manager import PersonalityManager
+from utils.openai_utils import get_openai_response
 
 logger = logging.getLogger(__name__)
 
@@ -14,14 +17,19 @@ class RedditHandler:
     def __init__(self, personality_manager: PersonalityManager, config_path: str = "config.json"):
         logger.info("Initializing Reddit handler")
         try:
-            self.config = self._load_config(config_path)
+            self.config = self._load_config(config_path)['platforms']['reddit']
+            if not self.config['enabled']:
+                raise ValueError("Reddit platform is not enabled in config")
             logger.info("Config loaded successfully")
         except Exception as e:
             logger.error(f"Failed to load config: {str(e)}")
             raise
 
         self.personality_manager = personality_manager
-        self.db_path = os.getenv("DB_PATH", "reddit_bot.db")
+        self.db_path = os.getenv("DB_PATH", "bot.db")  # Use bot.db as default
+        logger.info(f"Using database path: {self.db_path}")
+        self.active_personality = None
+        self._load_active_personality()
         
         try:
             # Log environment variables (without sensitive data)
@@ -39,6 +47,22 @@ class RedditHandler:
         except Exception as e:
             logger.error(f"Failed to initialize Reddit API client: {str(e)}")
             raise
+
+    def _load_active_personality(self):
+        """Load the active personality from config"""
+        try:
+            personality_name = self.config['personality']['active']
+            if not personality_name:
+                logger.warning("No active personality configured in config.json")
+                return
+                
+            self.active_personality = self.personality_manager.get_personality(personality_name)
+            if self.active_personality:
+                logger.info(f"Loaded active personality: {personality_name}")
+            else:
+                logger.error(f"Failed to load configured personality: {personality_name}")
+        except Exception as e:
+            logger.error(f"Error loading active personality: {str(e)}")
 
     def _load_config(self, config_path: str) -> Dict:
         logger.debug(f"Loading config from {config_path}")
@@ -78,7 +102,7 @@ class RedditHandler:
             columns = c.fetchall()
             logger.info(f"Posts table columns: {[col[1] for col in columns]}")
             
-            for subreddit_name in self.config['target_subreddits']:
+            for subreddit_name in self.config.get('target_subreddits', ['RedHarmonyAI']):
                 logger.info(f"Processing subreddit: {subreddit_name}")
                 subreddit = self.reddit.subreddit(subreddit_name)
                 
@@ -107,7 +131,7 @@ class RedditHandler:
                             logger.info(f"Successfully stored post {submission.id}")
                             
                             # Process comments if needed
-                            if self.personality_manager.should_interact(submission.author.name, 'reddit'):
+                            if self.config['personality']['settings']['auto_reply']:
                                 self._process_comments(submission, c)
                                 
                         except Exception as e:
@@ -128,14 +152,21 @@ class RedditHandler:
 
     def _process_comments(self, submission: praw.models.Submission, cursor) -> None:
         """Process comments for a submission"""
-        # Get a personality for this interaction
-        personality = self.personality_manager.get_random_personality('reddit')
+        # Use active personality if available
+        personality = self.active_personality or self.personality_manager.get_random_personality('reddit')
         if not personality:
             return
 
+        # Check reply probability
+        if not self._should_reply():
+            logger.info("Skipping reply based on probability settings")
+            return
+
         # Generate and post comment
-        prompt = self.personality_manager.get_personality_prompt(personality, 'reddit', is_reply=True)
-        comment_text = self._generate_comment(submission.title + "\n" + submission.selftext, prompt)
+        comment_text = self.generate_comment_content(personality, submission.title, submission.selftext)
+        if not comment_text:
+            logger.warning("Failed to generate comment content")
+            return
         
         try:
             comment = submission.reply(comment_text)
@@ -143,10 +174,13 @@ class RedditHandler:
             # Store comment in database
             now = datetime.now()
             cursor.execute('''INSERT INTO comments 
-                            (platform, username, comment_id, post_id, comment_content, timestamp)
-                            VALUES (?, ?, ?, ?, ?, ?)''',
+                            (platform, username, comment_id, post_id, comment_content, timestamp,
+                             personality_id, personality_context)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
                          ('reddit', personality['name'], comment.id,
-                          submission.id, comment_text, now))
+                          submission.id, comment_text, now,
+                          personality['name'],
+                          json.dumps({'name': personality['name'], 'style': personality['style']['chat']})))
             
             # Update platform stats
             cursor.execute('''UPDATE platform_stats 
@@ -158,11 +192,34 @@ class RedditHandler:
         except Exception as e:
             logger.error(f"Error posting comment: {str(e)}")
 
-    def _generate_comment(self, context: str, prompt: str) -> str:
-        """Generate a comment based on context and personality prompt"""
-        # This is a placeholder - in a real implementation, this would use
-        # a more sophisticated response generation system
-        return f"Thank you for sharing! I understand your perspective and would like to add my thoughts..."
+    def _should_reply(self) -> bool:
+        """Check if we should reply based on probability settings"""
+        import random
+        return random.random() < self.config['personality']['settings'].get('reply_probability', 0.7)
+
+    def generate_comment_content(self, personality: Dict, title: str, content: str) -> Optional[str]:
+        """Generate a comment based on personality and context"""
+        try:
+            base_prompt = self.personality_manager.get_personality_prompt(personality, 'reddit', is_reply=True)
+            enhanced_prompt = f"""
+{base_prompt}
+
+As {personality['name']}, engage thoughtfully with this Reddit post from your unique perspective.
+Write a natural, engaging response that adds value to the discussion.
+
+The post title: {title}
+The post content: {content}
+
+Remember:
+- You are {personality['name']}, {personality['bio'][0]}
+- Draw from your specific knowledge in: {', '.join(personality['knowledge'][:3])}
+- Maintain your characteristic style: {', '.join(personality['style']['chat'])}
+- Keep the response concise but informative
+"""
+            return get_openai_response(enhanced_prompt)
+        except Exception as e:
+            logger.error(f"Error generating comment content: {str(e)}")
+            return None
 
     def get_platform_stats(self) -> Dict:
         """Get platform statistics"""
@@ -190,25 +247,51 @@ class RedditHandler:
         c = conn.cursor()
         
         try:
-            c.execute('''SELECT p.post_id, p.username, p.subreddit, p.post_title,
-                               c.comment_id, c.timestamp
-                        FROM posts p
-                        LEFT JOIN comments c ON p.post_id = c.post_id
-                        WHERE p.platform = 'reddit'
-                        ORDER BY c.timestamp DESC
-                        LIMIT ?''',
-                     (limit,))
+            # Verify table schemas before query
+            logger.info("Verifying table schemas before query...")
+            c.execute("PRAGMA table_info(posts)")
+            posts_columns = [col[1] for col in c.fetchall()]
+            logger.info(f"Posts table columns: {posts_columns}")
+            
+            c.execute("PRAGMA table_info(comments)")
+            comments_columns = [col[1] for col in c.fetchall()]
+            logger.info(f"Comments table columns: {comments_columns}")
+            
+            # Get recent posts and their associated comments
+            query = '''SELECT p.post_id, p.username, p.subreddit, p.post_title,
+                             p.personality_id, p.personality_context,
+                             c.comment_id, c.comment_content, c.timestamp
+                      FROM posts p
+                      LEFT JOIN comments c ON p.post_id = c.post_id
+                      WHERE p.platform = 'reddit'
+                      ORDER BY COALESCE(c.timestamp, p.timestamp) DESC
+                      LIMIT ?'''
+            logger.info(f"Executing query: {query}")
+            
+            c.execute(query, (limit,))
+            rows = c.fetchall()
+            logger.info(f"Query returned {len(rows)} rows")
             
             activities = []
-            for row in c.fetchall():
-                activities.append({
+            for row in rows:
+                activity = {
                     'post_id': row[0],
                     'username': row[1],
                     'subreddit': row[2],
                     'title': row[3],
-                    'comment_id': row[4],
-                    'timestamp': row[5]
-                })
+                    'personality_id': row[4],
+                    'personality_context': json.loads(row[5]) if row[5] else None,
+                    'comment_id': row[6],
+                    'comment_content': row[7],
+                    'timestamp': row[8]
+                }
+                activities.append(activity)
+                logger.debug(f"Processed activity: {activity}")
+            
             return activities
+        except Exception as e:
+            logger.error(f"Error in get_recent_activity: {str(e)}")
+            logger.error(f"Database path: {self.db_path}")
+            raise
         finally:
             conn.close() 

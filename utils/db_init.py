@@ -1,164 +1,135 @@
+"""Database initialization script"""
+
+import os
 import sqlite3
 import logging
-import os
 from datetime import datetime
-
-from utils.db_utils import init_db_connection
 
 logger = logging.getLogger(__name__)
 
-def initialize_db():
-    """Initialize the database with all required tables"""
-    logger.info("Starting database initialization")
+def verify_table_schema(cursor, table_name):
+    """Verify table schema and log column information"""
+    cursor.execute(f"PRAGMA table_info({table_name})")
+    columns = cursor.fetchall()
+    column_names = [col[1] for col in columns]
+    column_types = [col[2] for col in columns]
+    logger.info(f"Table {table_name} schema:")
+    for name, type_ in zip(column_names, column_types):
+        logger.info(f"  - Column: {name} (Type: {type_})")
+    return column_names
+
+def init_database(db_path: str = "bot.db", force_recreate: bool = False):
+    """Initialize database with required tables"""
+    logger.info(f"Initializing database at {db_path}")
+    
+    # Drop existing database if force_recreate is True
+    if force_recreate and os.path.exists(db_path):
+        logger.info(f"Dropping existing database at {db_path}")
+        os.remove(db_path)
+        logger.info(f"Database file exists after removal: {os.path.exists(db_path)}")
+    
+    conn = sqlite3.connect(db_path)
     try:
-        # Use the database path from environment variable or default
-        db_path = os.getenv("DB_PATH", "reddit_bot.db")
-        logger.info(f"Using database path: {db_path}")
-        logger.info(f"Database file exists before connection: {os.path.exists(db_path)}")
-        
-        conn = init_db_connection(db_path)
-        logger.info("Database connection established")
-        
-        # Log SQLite settings
         c = conn.cursor()
-        c.execute("PRAGMA foreign_keys")
-        logger.info(f"Foreign keys enabled: {c.fetchone()[0]}")
-        c.execute("PRAGMA journal_mode")
-        logger.info(f"Journal mode: {c.fetchone()[0]}")
         
-        logger.debug("Creating tables...")
+        # Drop existing tables if force_recreate is True
+        if force_recreate:
+            logger.info("Dropping existing tables")
+            tables = ['platform_stats', 'posts', 'comments', 'personality_stats']
+            for table in tables:
+                c.execute(f"DROP TABLE IF EXISTS {table}")
+                logger.info(f"Dropped table: {table}")
         
-        # Start transaction explicitly
-        conn.execute("BEGIN TRANSACTION")
-        logger.info("Started database transaction")
+        # Log initial database state
+        c.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        existing_tables = c.fetchall()
+        logger.info(f"Existing tables before creation: {[t[0] for t in existing_tables]}")
         
-        try:
-            # Reddit-specific tables
-            c.execute('''CREATE TABLE IF NOT EXISTS posts (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                platform TEXT DEFAULT 'reddit',
-                post_id TEXT UNIQUE,
-                username TEXT,
-                subreddit TEXT,
-                post_title TEXT,
-                post_content TEXT,
-                timestamp DATETIME
-            )''')
-            logger.debug("Created posts table")
-            
-            # Verify table structure
-            c.execute("PRAGMA table_info(posts)")
-            columns = c.fetchall()
-            logger.info(f"Posts table columns: {[col[1] for col in columns]}")
-
-            c.execute('''CREATE TABLE IF NOT EXISTS comments (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                platform TEXT DEFAULT 'reddit',
-                username TEXT,
-                comment_id TEXT UNIQUE,
-                post_id TEXT,
-                comment_content TEXT,
-                timestamp DATETIME,
-                FOREIGN KEY(post_id) REFERENCES posts(post_id)
-            )''')
-            logger.debug("Created comments table")
-
-            c.execute('''CREATE TABLE IF NOT EXISTS account_activity (
-                account TEXT PRIMARY KEY,
-                platform TEXT,
-                last_post_time DATETIME,
-                last_comment_time DATETIME,
-                total_posts INTEGER DEFAULT 0,
-                total_comments INTEGER DEFAULT 0,
-                UNIQUE(account, platform)
-            )''')
-            logger.debug("Created account_activity table")
-
-            # Eliza-specific tables
-            c.execute('''CREATE TABLE IF NOT EXISTS eliza_sessions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                session_id TEXT UNIQUE,
-                user_id TEXT,
-                personality_type TEXT,
-                start_time DATETIME,
-                last_activity DATETIME,
-                is_active BOOLEAN DEFAULT 1
-            )''')
-            logger.debug("Created eliza_sessions table")
-
-            c.execute('''CREATE TABLE IF NOT EXISTS eliza_messages (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                session_id TEXT,
-                message_type TEXT,
-                content TEXT,
-                timestamp DATETIME,
-                FOREIGN KEY(session_id) REFERENCES eliza_sessions(session_id)
-            )''')
-            logger.debug("Created eliza_messages table")
-
-            # Platform-agnostic tables
-            c.execute('''CREATE TABLE IF NOT EXISTS personality_usage (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                platform TEXT,
-                personality_name TEXT,
-                interaction_count INTEGER DEFAULT 0,
-                last_used DATETIME,
-                UNIQUE(platform, personality_name)
-            )''')
-            logger.debug("Created personality_usage table")
-
-            c.execute('''CREATE TABLE IF NOT EXISTS platform_stats (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                platform TEXT UNIQUE,
-                total_interactions INTEGER DEFAULT 0,
-                last_activity DATETIME,
-                status TEXT
-            )''')
-            logger.debug("Created platform_stats table")
-
-            # Insert default platforms
-            platforms = ['reddit', 'eliza']
+        # Create platform stats table
+        c.execute('''CREATE TABLE IF NOT EXISTS platform_stats
+                    (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                     platform TEXT UNIQUE,
+                     total_interactions INTEGER DEFAULT 0,
+                     total_posts INTEGER DEFAULT 0,
+                     total_comments INTEGER DEFAULT 0,
+                     last_activity DATETIME)''')
+        logger.info("Created platform_stats table")
+        verify_table_schema(c, 'platform_stats')
+        
+        # Create posts table
+        c.execute('''CREATE TABLE IF NOT EXISTS posts
+                    (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                     platform TEXT,
+                     post_id TEXT UNIQUE,
+                     username TEXT,
+                     subreddit TEXT,
+                     post_title TEXT,
+                     post_content TEXT,
+                     personality_id TEXT,
+                     personality_context TEXT,
+                     timestamp DATETIME,
+                     UNIQUE(platform, post_id))''')
+        logger.info("Created posts table")
+        verify_table_schema(c, 'posts')
+        
+        # Create comments table
+        c.execute('''CREATE TABLE IF NOT EXISTS comments
+                    (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                     platform TEXT,
+                     username TEXT,
+                     comment_id TEXT UNIQUE,
+                     post_id TEXT,
+                     comment_content TEXT,
+                     personality_id TEXT,
+                     personality_context TEXT,
+                     timestamp DATETIME,
+                     FOREIGN KEY(post_id) REFERENCES posts(post_id),
+                     UNIQUE(platform, comment_id))''')
+        logger.info("Created comments table")
+        verify_table_schema(c, 'comments')
+        
+        # Create personality stats table
+        c.execute('''CREATE TABLE IF NOT EXISTS personality_stats
+                    (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                     personality_id TEXT,
+                     platform TEXT,
+                     total_posts INTEGER DEFAULT 0,
+                     total_comments INTEGER DEFAULT 0,
+                     last_activity DATETIME,
+                     UNIQUE(personality_id, platform))''')
+        logger.info("Created personality_stats table")
+        verify_table_schema(c, 'personality_stats')
+        
+        # Initialize platform stats if empty
+        c.execute('SELECT COUNT(*) FROM platform_stats')
+        if c.fetchone()[0] == 0:
+            platforms = ['reddit', 'twitter', 'discord', 'telegram']
             now = datetime.now()
             for platform in platforms:
                 c.execute('''INSERT OR IGNORE INTO platform_stats 
-                            (platform, total_interactions, last_activity, status)
-                            VALUES (?, 0, ?, 'active')''', 
+                            (platform, total_interactions, total_posts, total_comments, last_activity)
+                            VALUES (?, 0, 0, 0, ?)''',
                          (platform, now))
-            logger.debug("Inserted default platform stats")
-
-            conn.commit()
-            logger.info("Transaction committed successfully")
-            
-            # Verify tables after commit
-            c.execute("SELECT name FROM sqlite_master WHERE type='table'")
-            tables = c.fetchall()
-            logger.info(f"Tables after commit: {[table[0] for table in tables]}")
-            
-            conn.close()
-            logger.info("Database connection closed")
-            
-            # Verify file exists after close
-            logger.info(f"Database file exists after close: {os.path.exists(db_path)}")
-            
-            return True
-            
-        except Exception as e:
-            logger.error(f"Error during table creation: {str(e)}")
-            conn.rollback()
-            logger.info("Transaction rolled back due to error")
-            raise
-            
-    except sqlite3.Error as e:
-        logger.error(f"Database initialization failed. Error: {e}")
-        return False
+                logger.info(f"Initialized stats for platform: {platform}")
+        
+        # Verify final database state
+        c.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        final_tables = c.fetchall()
+        logger.info(f"Final tables after creation: {[t[0] for t in final_tables]}")
+        
+        conn.commit()
+        logger.info("Database initialization completed successfully")
+        
     except Exception as e:
-        logger.error(f"Unexpected error during database initialization: {e}")
-        return False
+        logger.error(f"Error initializing database: {str(e)}")
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
 if __name__ == "__main__":
-    # Configure logging for command-line usage
     logging.basicConfig(
-        level=logging.DEBUG,
+        level=logging.INFO,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )
-    initialize_db() 
+    init_database(force_recreate=True) 

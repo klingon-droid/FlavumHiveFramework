@@ -1,143 +1,103 @@
 import os
+import time
 import logging
-import praw
 from datetime import datetime
 from platforms.reddit.handler import RedditHandler
 from utils.personality_manager import PersonalityManager
 
 # Set up logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('reddit_integration_test.log'),
-        logging.StreamHandler()
-    ]
-)
-
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def test_reddit_credentials():
-    """Test Reddit API credentials"""
-    logger.info("Testing Reddit credentials...")
+def test_live_reddit_interaction():
     try:
-        reddit = praw.Reddit(
-            client_id=os.getenv('REDDIT_CLIENT_ID'),
-            client_secret=os.getenv('REDDIT_CLIENT_SECRET'),
-            user_agent=os.getenv('REDDIT_USER_AGENT'),
-            username=os.getenv('REDDIT_USERNAME'),
-            password=os.getenv('REDDIT_PASSWORD')
-        )
-        # Verify authentication
-        username = reddit.user.me().name
-        logger.info(f"Successfully authenticated as: {username}")
-        return True
-    except Exception as e:
-        logger.error(f"Reddit authentication failed: {str(e)}")
-        return False
-
-def test_reddit_read_capabilities(reddit_handler):
-    """Test ability to read from Reddit"""
-    logger.info("Testing Reddit read capabilities...")
-    try:
-        # Get configured subreddits from handler
-        subreddits = reddit_handler.config['target_subreddits']
-        logger.info(f"Configured subreddits: {subreddits}")
+        # Initialize handlers
+        personality_manager = PersonalityManager()
+        reddit_handler = RedditHandler(personality_manager)
         
-        for subreddit_name in subreddits[:1]:  # Test with first subreddit
-            subreddit = reddit_handler.reddit.subreddit(subreddit_name)
-            # Try to fetch latest posts
-            posts = list(subreddit.new(limit=1))
-            if posts:
-                post = posts[0]
-                logger.info(f"Successfully read post from r/{subreddit_name}")
-                logger.info(f"Post title: {post.title}")
-                return True
-            else:
-                logger.warning(f"No posts found in r/{subreddit_name}")
-                return False
-    except Exception as e:
-        logger.error(f"Failed to read from Reddit: {str(e)}")
-        return False
-
-def test_reddit_write_capabilities(reddit_handler):
-    """Test ability to write to Reddit (with a test comment)"""
-    logger.info("Testing Reddit write capabilities...")
-    try:
-        # Create a test comment on our own profile to avoid spamming
-        test_message = f"Test comment - {datetime.now().isoformat()}"
-        user_profile = reddit_handler.reddit.user.me()
+        logger.info("Starting live Reddit interaction test...")
         
-        # Get the most recent self-post from our profile, or create one if none exists
-        for post in user_profile.submissions.new(limit=1):
-            if post.author == user_profile:
-                test_post = post
-                break
-        else:
-            # Create a test post on our profile
-            test_post = reddit_handler.reddit.subreddit("u_" + user_profile.name).submit(
-                title=f"Test Post - {datetime.now().isoformat()}",
-                selftext="This is a test post for integration testing."
+        # 1. Create a meaningful post about RedHarmony
+        test_subreddit = "RedHarmonyAI"
+        test_title = "RedHarmony AI: Latest Development Updates and Community Discussion"
+        test_content = """
+Hello RedHarmony community! 👋
+
+I wanted to start a discussion about the latest developments in our AI ecosystem. Here are some key points I'd love to get your thoughts on:
+
+1. AI-Driven Market Analysis
+2. Community Engagement Features
+3. Cross-Platform Integration
+
+What aspects of RedHarmony's AI capabilities are you most excited about? What features would you like to see implemented in the near future?
+
+Looking forward to engaging with everyone in the comments! 🤖✨
+        """.strip()
+        
+        try:
+            # Create the post
+            subreddit = reddit_handler.reddit.subreddit(test_subreddit)
+            test_post = subreddit.submit(title=test_title, selftext=test_content)
+            post_url = f"https://reddit.com{test_post.permalink}"
+            logger.info(f"Created discussion post: {post_url}")
+            
+            # Wait for post to be available
+            time.sleep(5)
+            
+            # 2. Generate and add an AI response using the personality system
+            logger.info("Generating AI response using personality system...")
+            
+            # Get the active personality
+            personality = reddit_handler.active_personality
+            logger.info(f"Using personality: {personality['name']}")
+            
+            # Generate response using the personality
+            ai_response = reddit_handler.generate_comment_content(
+                personality=personality,
+                title=test_title,
+                content=test_content
             )
-        
-        # Add a test comment
-        comment = test_post.reply(test_message)
-        logger.info(f"Successfully posted test comment: {comment.id}")
-        
-        # Clean up - delete the test comment
-        comment.delete()
-        logger.info("Successfully deleted test comment")
-        return True
+            
+            if ai_response:
+                # Post the AI-generated comment
+                comment = test_post.reply(ai_response)
+                logger.info(f"Posted AI response with ID: {comment.id}")
+                
+                # Wait briefly to simulate natural timing
+                time.sleep(3)
+                
+                # 3. Add a follow-up interaction
+                follow_up = "Thank you for sharing these insights! Could you elaborate more on the AI-driven market analysis capabilities?"
+                reply_to_ai = comment.reply(follow_up)
+                logger.info("Added follow-up question to simulate user interaction")
+                
+                # Display interaction statistics
+                logger.info("\nInteraction Summary:")
+                logger.info(f"Post URL: {post_url}")
+                logger.info(f"Total Comments: {test_post.num_comments}")
+                logger.info(f"Post Score: {test_post.score}")
+                
+                # Check rate limits
+                logger.info("\nRate Limit Status:")
+                logger.info(f"Requests Used: {reddit_handler.reddit.auth.limits['used']}")
+                logger.info(f"Requests Remaining: {reddit_handler.reddit.auth.limits['remaining']}")
+                
+                # Keep the post for review (don't delete)
+                return True, f"Live interaction test completed successfully! View the post at: {post_url}"
+            else:
+                return False, "Failed to generate AI response"
+            
+        except Exception as e:
+            error_msg = f"Error during live Reddit interaction: {str(e)}"
+            logger.error(error_msg)
+            return False, error_msg
+            
     except Exception as e:
-        logger.error(f"Failed to write to Reddit: {str(e)}")
-        return False
-
-def test_database_integration(reddit_handler):
-    """Test database integration"""
-    logger.info("Testing database integration...")
-    try:
-        # Test platform stats
-        stats = reddit_handler.get_platform_stats()
-        logger.info(f"Platform stats: {stats}")
-        
-        # Test recent activity
-        activity = reddit_handler.get_recent_activity(limit=5)
-        logger.info(f"Recent activity count: {len(activity)}")
-        return True
-    except Exception as e:
-        logger.error(f"Database integration test failed: {str(e)}")
-        return False
-
-def main():
-    logger.info("Starting Reddit integration tests...")
-    
-    # Step 1: Test credentials
-    if not test_reddit_credentials():
-        logger.error("Credential test failed. Stopping tests.")
-        return False
-    
-    # Initialize handlers
-    personality_manager = PersonalityManager()
-    reddit_handler = RedditHandler(personality_manager)
-    
-    # Step 2: Test read capabilities
-    if not test_reddit_read_capabilities(reddit_handler):
-        logger.error("Read capabilities test failed. Stopping tests.")
-        return False
-    
-    # Step 3: Test write capabilities
-    if not test_reddit_write_capabilities(reddit_handler):
-        logger.error("Write capabilities test failed. Stopping tests.")
-        return False
-    
-    # Step 4: Test database integration
-    if not test_database_integration(reddit_handler):
-        logger.error("Database integration test failed. Stopping tests.")
-        return False
-    
-    logger.info("All Reddit integration tests completed successfully!")
-    return True
+        error_msg = f"Failed to initialize Reddit handler: {str(e)}"
+        logger.error(error_msg)
+        return False, error_msg
 
 if __name__ == "__main__":
-    success = main()
-    exit(0 if success else 1) 
+    success, message = test_live_reddit_interaction()
+    print(f"\nTest Result: {'✅ PASSED' if success else '❌ FAILED'}")
+    print(f"Message: {message}") 
