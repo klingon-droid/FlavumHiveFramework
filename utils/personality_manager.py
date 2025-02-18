@@ -19,7 +19,7 @@ class PersonalityManager:
         except Exception as e:
             print(f"Error loading config: {e}. Using defaults.")
             return {
-                "target_subreddits": ["CryptoCurrency"],
+                "target_subreddits": ["RedHarmonyAI"],
                 "rate_limits": {
                     "posts_per_day": 20,
                     "comments_per_day": 100,
@@ -42,32 +42,55 @@ class PersonalityManager:
             if filename.endswith('.json'):
                 with open(os.path.join(personality_dir, filename), 'r') as f:
                     personality = json.load(f)
-                    # Override subreddits with configured targets
-                    personality['settings']['subreddits'] = self.config['target_subreddits']
+                    # Update platform-specific settings
+                    if 'platform_settings' in personality:
+                        if 'reddit' in personality['platform_settings']:
+                            personality['platform_settings']['reddit']['subreddits'] = self.config['target_subreddits']
                     self.personalities[personality['name']] = personality
 
-    def get_random_personality(self) -> Dict:
-        """Get a random personality for starting new threads"""
-        return random.choice(list(self.personalities.values()))
+    def get_random_personality(self, platform: str = 'reddit') -> Dict:
+        """Get a random personality that supports the specified platform"""
+        valid_personalities = [
+            p for p in self.personalities.values()
+            if 'platform_settings' in p and platform in p['platform_settings']
+        ]
+        return random.choice(valid_personalities) if valid_personalities else None
 
-    def get_personality_for_thread(self, thread_id: str) -> Dict:
+    def get_personality_for_thread(self, thread_id: str, platform: str = 'reddit') -> Dict:
         """Get the personality that should respond in a thread"""
         if thread_id in self.conversation_threads:
-            return self.personalities[self.conversation_threads[thread_id]]
-        # If no personality assigned, assign one and return it
-        personality = self.get_random_personality()
-        self.conversation_threads[thread_id] = personality['name']
+            personality_name = self.conversation_threads[thread_id]
+            personality = self.personalities[personality_name]
+            if 'platform_settings' in personality and platform in personality['platform_settings']:
+                return personality
+        # If no personality assigned or current one doesn't support platform, assign one
+        personality = self.get_random_personality(platform)
+        if personality:
+            self.conversation_threads[thread_id] = personality['name']
         return personality
 
-    def get_contrasting_personality(self, current_personality: str) -> Dict:
+    def get_contrasting_personality(self, current_personality: str, platform: str = 'reddit') -> Dict:
         """Get a different personality to create interaction"""
-        options = [p for name, p in self.personalities.items() if name != current_personality]
-        return random.choice(options) if options else self.personalities[current_personality]
+        valid_personalities = [
+            p for name, p in self.personalities.items()
+            if name != current_personality
+            and 'platform_settings' in p
+            and platform in p['platform_settings']
+        ]
+        return random.choice(valid_personalities) if valid_personalities else self.personalities[current_personality]
 
-    def get_personality_prompt(self, personality: Dict, is_reply: bool = False) -> str:
-        """Generate a prompt based on personality traits and examples"""
+    def get_personality_prompt(self, personality: Dict, platform: str, is_reply: bool = False) -> str:
+        """Generate a prompt based on personality traits and platform settings"""
         prompt = f"You are {personality['name']}. "
         prompt += " ".join(personality['bio'])
+        
+        # Get platform-specific style
+        if platform in personality.get('platform_settings', {}):
+            platform_style = personality['platform_settings'][platform].get('interaction_style', '')
+            if platform_style:
+                prompt += f"\n\nPlatform style ({platform}): {platform_style}"
+        
+        # Add general style
         prompt += "\n\nStyle: " + ", ".join(personality['style']['chat' if is_reply else 'post'])
         
         if is_reply:
@@ -84,9 +107,19 @@ class PersonalityManager:
 
         return prompt
 
-    def should_interact(self, post_personality: str) -> bool:
+    def should_interact(self, post_personality: str, platform: str = 'reddit') -> bool:
         """Decide if we should create an interaction on this post"""
-        return random.random() < self.config['interaction_settings']['interaction_probability']
+        interaction_prob = self.config['interaction_settings']['interaction_probability']
+        if platform in self.config.get('platform_rate_limits', {}):
+            # Adjust probability based on platform settings
+            platform_limits = self.config['platform_rate_limits'][platform]
+            if 'interaction_probability' in platform_limits:
+                interaction_prob = platform_limits['interaction_probability']
+        return random.random() < interaction_prob
+
+    def get_platform_settings(self, platform: str) -> Dict:
+        """Get platform-specific settings"""
+        return self.config.get('platform_rate_limits', {}).get(platform, {})
 
     def get_subreddits(self) -> List[str]:
         """Get configured target subreddits"""

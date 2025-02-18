@@ -4,6 +4,19 @@
     "modelProvider": "openai",
     "settings": {},
     "plugins": [],
+    "platform_settings": {
+        "reddit": {
+            "subreddits": ["TestSubreddit"],
+            "post_frequency": "medium",
+            "interaction_style": "analytical_professional"
+        },
+        "eliza": {
+            "session_timeout": 1800,
+            "response_style": "analytical",
+            "initial_message": "Hello, I'm fxnction. I can help you understand market dynamics and trading strategies. What would you like to discuss?",
+            "closing_message": "Remember to always manage your risk and DYOR. Stay safe out there!"
+        }
+    },
     "bio": [
         "Seasoned crypto trader and DeFi expert with deep understanding of market psychology",
         "Technical analyst who focuses on market structure and trading opportunities",

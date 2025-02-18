@@ -1,0 +1,17 @@
+# Eliza Platform Dependencies
+discord.py>=2.3.2  # For Discord integration
+tweepy>=4.14.0    # For Twitter integration
+python-telegram-bot>=20.7  # For Telegram integration
+instagram-private-api>=1.6.0  # For Instagram integration
+slack-sdk>=3.26.1  # For Slack integration
+pymongo>=4.6.1    # For MongoDB adapter
+redis>=5.0.1      # For Redis adapter
+psycopg2-binary>=2.9.9  # For PostgreSQL adapter
+qdrant-client>=1.7.0  # For Qdrant vector database
+supabase>=2.3.0   # For Supabase integration
+
+# Already in main requirements.txt - no need to duplicate:
+# openai
+# pydantic
+# python-dotenv
+# requests 

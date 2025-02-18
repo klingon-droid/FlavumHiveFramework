@@ -1,0 +1,18 @@
+2025-02-18 12:03:13,398 - __main__ - INFO - Starting Reddit integration tests...
+2025-02-18 12:03:13,398 - __main__ - INFO - Testing Reddit credentials...
+2025-02-18 12:03:15,313 - __main__ - INFO - Successfully authenticated as: AccountantOk1680
+2025-02-18 12:03:15,317 - platforms.reddit.handler - INFO - Initializing Reddit handler
+2025-02-18 12:03:15,318 - platforms.reddit.handler - INFO - Config loaded successfully
+2025-02-18 12:03:15,318 - platforms.reddit.handler - INFO - Environment variables present: {'REDDIT_CLIENT_ID': True, 'REDDIT_CLIENT_SECRET': True, 'REDDIT_USER_AGENT': True, 'REDDIT_USERNAME': True, 'REDDIT_PASSWORD': True}
+2025-02-18 12:03:15,319 - platforms.reddit.handler - INFO - Reddit API client initialized successfully
+2025-02-18 12:03:15,319 - __main__ - INFO - Testing Reddit read capabilities...
+2025-02-18 12:03:15,319 - __main__ - INFO - Configured subreddits: ['RedHarmonyAI']
+2025-02-18 12:03:16,983 - __main__ - INFO - Successfully read post from r/RedHarmonyAI
+2025-02-18 12:03:16,983 - __main__ - INFO - Post title: "DeFi Boom: A Skeptic Weighs In on Security, Yield Sources, and Innovation"
+2025-02-18 12:03:16,983 - __main__ - INFO - Testing Reddit write capabilities...
+2025-02-18 12:03:18,243 - __main__ - INFO - Successfully posted test comment: mdet1jh
+2025-02-18 12:03:18,529 - __main__ - INFO - Successfully deleted test comment
+2025-02-18 12:03:18,530 - __main__ - INFO - Testing database integration...
+2025-02-18 12:03:18,537 - __main__ - INFO - Platform stats: {'total_interactions': 19, 'last_activity': None}
+2025-02-18 12:03:18,539 - __main__ - INFO - Recent activity count: 5
+2025-02-18 12:03:18,539 - __main__ - INFO - All Reddit integration tests completed successfully!
