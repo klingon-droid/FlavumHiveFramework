@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+venv/
+
+# Logs and databases
+*.log
+*.db
+debug_twitter/
+bot_output.log
+twitter_integration_test.log
+bot_status.json
+
+# Environment
+.env
+.env.local
+
+# Test artifacts
+test_report_*.txt
+*.png
+debug_*/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

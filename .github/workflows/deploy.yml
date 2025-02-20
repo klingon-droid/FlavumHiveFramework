@@ -1,0 +1,43 @@
+name: Deploy to Digital Ocean
+
+on:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+          
+      - name: Build container image
+        run: docker build -t flavumhive .
+
+      - name: Log in to DO Container Registry
+        run: doctl registry login --expiry-seconds 600
+        
+      - name: Tag image
+        run: |
+          docker tag flavumhive registry.digitalocean.com/${{ secrets.DIGITALOCEAN_REGISTRY }}/flavumhive:$(echo $GITHUB_SHA | head -c7)
+          docker tag flavumhive registry.digitalocean.com/${{ secrets.DIGITALOCEAN_REGISTRY }}/flavumhive:latest
+          
+      - name: Push image to DO Container Registry
+        run: |
+          docker push registry.digitalocean.com/${{ secrets.DIGITALOCEAN_REGISTRY }}/flavumhive:$(echo $GITHUB_SHA | head -c7)
+          docker push registry.digitalocean.com/${{ secrets.DIGITALOCEAN_REGISTRY }}/flavumhive:latest
+          
+      - name: Deploy to Digital Ocean droplet
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DROPLET_HOST }}
+          username: ${{ secrets.DROPLET_USERNAME }}
+          key: ${{ secrets.DROPLET_SSH_KEY }}
+          script: |
+            cd /opt/flavumhive
+            docker-compose pull
+            docker-compose up -d 

@@ -1,0 +1,15 @@
+[Unit]
+Description=RedHarmony Twitter Bot Service
+After=network.target
+
+[Service]
+Type=simple
+User=jefferson
+WorkingDirectory=/Users/jefferson/Documents/degen/400MillionDollars-MarketCap-Projects/redharmony-project/FlavumHive
+ExecStart=/Users/jefferson/Documents/degen/400MillionDollars-MarketCap-Projects/redharmony-project/FlavumHive/venv/bin/python continuous_twitter_bot.py
+Restart=always
+RestartSec=300
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target 

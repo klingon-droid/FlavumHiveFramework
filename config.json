@@ -1,0 +1,101 @@
+{
+    "global_settings": {
+        "debug_mode": false,
+        "dry_run": false,
+        "database": {
+            "path": "bot.db",
+            "backup_frequency": "daily"
+        }
+    },
+    "platforms": {
+        "twitter": {
+            "enabled": true,
+            "personality": {
+                "active": "crypto_researcher",
+                "settings": {
+                    "add_signature": true,
+                    "auto_reply": true,
+                    "reply_probability": 0.8
+                }
+            },
+            "rate_limits": {
+                "tweets_per_hour": 5,
+                "replies_per_hour": 10,
+                "min_delay_between_actions": 30
+            },
+            "interaction_settings": {
+                "max_conversation_depth": 4,
+                "max_daily_interactions": 100
+            }
+        },
+        "reddit": {
+            "enabled": true,
+            "personality": {
+                "active": "crypto_researcher",
+                "settings": {
+                    "add_signature": true,
+                    "auto_reply": true,
+                    "reply_probability": 0.7
+                }
+            },
+            "target_subreddits": ["RedHarmonyAI"],
+            "rate_limits": {
+                "posts_per_day": 10,
+                "comments_per_day": 50,
+                "posts_per_hour": 2,
+                "comments_per_hour": 5,
+                "min_delay_between_actions": 20
+            },
+            "interaction_settings": {
+                "max_conversation_depth": 4,
+                "max_posts_per_thread": 6
+            }
+        },
+        "eliza": {
+            "enabled": true,
+            "personality": {
+                "active": "therapist",
+                "settings": {
+                    "session_timeout": 300,
+                    "max_message_length": 500
+                }
+            },
+            "rate_limits": {
+                "messages_per_minute": 10,
+                "messages_per_hour": 150,
+                "max_concurrent_sessions": 5
+            },
+            "response_delay": {
+                "min": 1,
+                "max": 3
+            }
+        },
+        "discord": {
+            "enabled": false,
+            "personality": {
+                "active": "crypto_researcher",
+                "settings": {
+                    "add_signature": true,
+                    "auto_reply": true
+                }
+            },
+            "rate_limits": {
+                "messages_per_minute": 5,
+                "messages_per_hour": 100
+            }
+        },
+        "telegram": {
+            "enabled": false,
+            "personality": {
+                "active": "crypto_researcher",
+                "settings": {
+                    "add_signature": true
+                }
+            },
+            "rate_limits": {
+                "messages_per_minute": 20,
+                "messages_per_hour": 200
+            }
+        }
+    }
+} 
