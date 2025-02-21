@@ -256,9 +256,8 @@ class RedditHandler:
                                           json.dumps({'name': personality['name'], 'style': personality['style']['post']}),
                                           now))
                                 
-                                # Handle commenters if enabled
-                                if commenters_config and commenters_config.get('enabled', False):
-                                    self._handle_commenters(submission, commenters_config)
+                                # Process comments for new post
+                                self._process_comments(submission, cursor)
                         
                         # Process existing posts
                         for submission in subreddit.new(limit=5):
@@ -276,9 +275,8 @@ class RedditHandler:
                                     
                                     logger.info(f"Successfully stored post {submission.id}")
                                     
-                                    # Handle commenters for existing posts
-                                    if commenters_config and commenters_config.get('enabled', False):
-                                        self._handle_commenters(submission, commenters_config)
+                                    # Process comments for existing post
+                                    self._process_comments(submission, cursor)
                                         
                                 except Exception as e:
                                     logger.error(f"Error processing post {submission.id}: {str(e)}", exc_info=True)
@@ -299,127 +297,6 @@ class RedditHandler:
                 logging.info(f"[Process] Ending subreddit processing in thread {thread_id} (Active={self._thread_local.connection_active}, Transactions={self._thread_local.transaction_count})")
             if hasattr(self._thread_local, 'connection_active') and not self._thread_local.connection_active:
                 self._cleanup_thread()
-
-    def _handle_commenters(self, submission: praw.models.Submission, config: Dict) -> None:
-        """Handle commenting personalities on a submission"""
-        import random
-        
-        # Check if we should comment based on probability
-        if random.random() > config.get('comment_probability', 0.8):
-            logger.info("Skipping comments based on probability")
-            return
-            
-        # Get number of comments to generate
-        min_comments = config.get('comments_per_post', {}).get('min', 1)
-        max_comments = config.get('comments_per_post', {}).get('max', 3)
-        num_comments = random.randint(min_comments, max_comments)
-        
-        # Get available personalities
-        available_personalities = config.get('personalities', [])
-        if not available_personalities:
-            logger.warning("No commenter personalities configured")
-            return
-            
-        # Track used personalities to avoid duplicates
-        used_personalities = set()
-        parent_comments = []
-        
-        # Generate initial comments
-        for _ in range(num_comments):
-            # Get unused personality
-            remaining_personalities = [p for p in available_personalities if p not in used_personalities]
-            if not remaining_personalities:
-                break
-                
-            personality_name = random.choice(remaining_personalities)
-            personality = self.personality_manager.get_personality(personality_name)
-            if not personality:
-                continue
-                
-            used_personalities.add(personality_name)
-            
-            # Generate and post comment
-            comment_text = self.generate_comment_content(personality, submission.title, submission.selftext)
-            if comment_text:
-                try:
-                    comment = submission.reply(comment_text)
-                    parent_comments.append((comment, personality))
-                    
-                    # Store in database
-                    now = datetime.now()
-                    self.db_cursor.execute('''INSERT INTO comments 
-                                    (platform, username, comment_id, post_id, comment_content, timestamp,
-                                     personality_id, personality_context)
-                                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
-                                 ('reddit', personality['name'], comment.id,
-                                  submission.id, comment_text, now,
-                                  personality['name'],
-                                  json.dumps({'name': personality['name'], 'style': personality['style']['chat']})))
-                    self.db_conn.commit()
-                except Exception as e:
-                    logger.error(f"Error posting comment: {str(e)}")
-                    continue
-        
-        # Handle interactions between commenters if enabled
-        if config.get('allow_interactions', True) and len(parent_comments) > 1:
-            self._handle_commenter_interactions(parent_comments, config)
-
-    def _handle_commenter_interactions(self, parent_comments, config: Dict) -> None:
-        """Handle interactions between commenting personalities"""
-        import random
-        
-        max_depth = config.get('max_interaction_depth', 2)
-        current_depth = 0
-        
-        while current_depth < max_depth:
-            # Randomly select a parent comment to reply to
-            if not parent_comments:
-                break
-                
-            parent_comment, parent_personality = random.choice(parent_comments)
-            
-            # Get an unused personality for the reply
-            available_personalities = [p for p in config.get('personalities', [])
-                                    if p != parent_personality['name']]
-            if not available_personalities:
-                break
-                
-            replier_name = random.choice(available_personalities)
-            replier = self.personality_manager.get_personality(replier_name)
-            if not replier:
-                continue
-            
-            # Generate and post reply
-            reply_text = self.generate_comment_content(
-                replier,
-                parent_comment.submission.title,
-                parent_comment.body,
-                is_reply=True
-            )
-            
-            if reply_text:
-                try:
-                    reply = parent_comment.reply(reply_text)
-                    
-                    # Store in database
-                    now = datetime.now()
-                    self.db_cursor.execute('''INSERT INTO comments 
-                                    (platform, username, comment_id, post_id, comment_content, timestamp,
-                                     personality_id, personality_context)
-                                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
-                                 ('reddit', replier['name'], reply.id,
-                                  parent_comment.submission.id, reply_text, now,
-                                  replier['name'],
-                                  json.dumps({'name': replier['name'], 'style': replier['style']['chat']})))
-                    
-                    self.db_conn.commit()
-                    # Add this reply as a potential parent for next iteration
-                    parent_comments.append((reply, replier))
-                except Exception as e:
-                    logger.error(f"Error posting reply: {str(e)}")
-                    continue
-            
-            current_depth += 1
 
     def _process_comments(self, submission: praw.models.Submission, cursor, forced_personality: Dict = None) -> None:
         """Process comments for a submission"""
