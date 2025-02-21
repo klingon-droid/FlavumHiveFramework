@@ -2,91 +2,9 @@
 
 FlavumHive is an advanced social media orchestration framework that enables intelligent, personality-driven interactions across multiple platforms. It creates engaging, authentic conversations through distinct AI personalities, each maintaining consistent character traits and expertise across different social media platforms.
 
-## Supported Platforms
+## 🚀 Quick Start
 
-- ✅ **Twitter/X**: Real-time engagement, trending discussions, thread creation
-- ✅ **Reddit**: Community discussions, detailed analysis, subreddit engagement
-- 🔄 **Discord**: Coming soon - Server management, community interaction
-- 🔄 **Telegram**: Coming soon - Group discussions, broadcast channels
-
-## Core Features
-
-- **Multi-Platform Integration**: Seamless operation across different social media platforms
-- **Personality-Driven Interactions**: Consistent character voices across all platforms
-- **Intelligent Rate Management**: Platform-specific rate limiting and timing controls
-- **Advanced Session Handling**: Robust browser automation and API integrations
-- **Comprehensive Monitoring**: Unified logging and status tracking
-- **Database Integration**: Cross-platform activity tracking and state management
-
-## Active Personalities
-
-The system features expert personalities in crypto, DeFi, and technology:
-
-1. **crypto_researcher** - Academic analysis and research
-2. **defi_skeptic** - Critical analysis and risk assessment
-3. **infinity_gainz** - Market analysis and trading
-4. **fxnction** - DeFi and protocol expertise
-5. **shawmakesmagic** - Technical development and architecture
-
-Each personality maintains consistent traits across all platforms while adapting to platform-specific communication styles.
-
-## Technical Architecture
-
-### Platform Handlers
-- `platforms/twitter/`: Twitter integration with browser automation
-- `platforms/reddit/`: Reddit API integration
-- `platforms/discord/`: (Coming soon) Discord bot integration
-- `platforms/telegram/`: (Coming soon) Telegram bot integration
-
-### Core Components
-- `utils/`: Shared utilities and helpers
-- `personalities/`: Personality configurations and traits
-- `database/`: Cross-platform data management
-
-## Configuration
-
-### Environment Setup
-```bash
-# Twitter Credentials
-TWITTER_USERNAME="your_username"
-TWITTER_PASSWORD="your_password"
-TWITTER_EMAIL="your_email"
-
-# Reddit Credentials
-REDDIT_USERNAME="your_username"
-REDDIT_PASSWORD="your_password"
-REDDIT_CLIENT_ID="your_client_id"
-REDDIT_CLIENT_SECRET="your_client_secret"
-
-# OpenAI Configuration
-OPENAI_API_KEY="your_openai_api_key"
-```
-
-### Platform Settings (`config.json`)
-```json
-{
-    "platforms": {
-        "twitter": {
-            "enabled": true,
-            "rate_limits": {
-                "tweets_per_hour": 5,
-                "min_delay_between_actions": 30
-            }
-        },
-        "reddit": {
-            "enabled": true,
-            "rate_limits": {
-                "posts_per_hour": 2,
-                "comments_per_hour": 5
-            }
-        }
-    }
-}
-```
-
-## Quick Start
-
-1. **Installation**:
+1. **Clone & Setup**:
    ```bash
    git clone https://github.com/yourusername/flavumhive.git
    cd flavumhive
@@ -95,75 +13,225 @@ OPENAI_API_KEY="your_openai_api_key"
    pip install -r requirements.txt
    ```
 
-2. **Configuration**:
-   - Copy `.env.example` to `.env` and add your credentials
-   - Adjust `config.json` for platform-specific settings
-
-3. **Platform Management**:
+2. **Environment Configuration**:
    ```bash
-   # Twitter Bot Management
-   python manage_bot.py start   # Start Twitter bot
-   python manage_bot.py status  # Check status
-   python manage_bot.py stop    # Stop bot
-   
-   # Reddit Bot Management
-   python main.py --platform reddit
+   cp .env.example .env
+   # Edit .env with your credentials:
+   # - Twitter credentials (username, password, email)
+   # - Reddit API credentials
+   # - OpenAI API key
    ```
 
-## Monitoring and Logs
+3. **Start the Bots**:
+   ```bash
+   # Start Twitter Bot
+   python continuous_twitter_bot.py
+   
+   # Start Reddit Bot
+   python main.py --platform reddit
+   
+   # Monitor Logs
+   tail -f twitter_bot.log  # Twitter logs
+   tail -f bot.log         # General logs
+   ```
 
-- **Platform-specific logs**: `{platform}_bot.log`
-- **Debug information**: `debug_{platform}/`
-- **Database**: `redharmony.db`
-- **Status tracking**: `bot_status.json`
+## 🎯 Core Functionalities
 
-## Development Status
+### 1. Multi-Platform Integration
+- **Twitter/X**: 
+  - Automated posting with personality-driven content
+  - Thread creation and management
+  - Real-time engagement monitoring
+  - Rate-limited interactions (5 tweets/hour default)
 
-### Completed ✅
-- Multi-platform framework architecture
-- Twitter integration with browser automation
-- Reddit API integration
-- Personality system implementation
-- Rate limiting and monitoring
-- Database integration
+- **Reddit**:
+  - Subreddit monitoring and engagement
+  - Automated post creation and responses
+  - Community-specific personality adaptation
+  - Rate-limited interactions (2 posts/hour, 5 comments/hour default)
 
-### In Progress 🔄
-- Discord integration
-- Telegram integration
-- Cross-platform conversation threading
-- Advanced analytics dashboard
+### 2. AI Personality System
+- **Available Personalities**:
+  - `crypto_researcher`: Academic analysis and research
+  - `defi_skeptic`: Critical analysis and risk assessment
+  - `infinity_gainz`: Market analysis and trading
+  - Each personality maintains:
+    - Consistent voice and style
+    - Platform-specific behavior patterns
+    - Configurable response types
 
-## Best Practices
+### 3. Configuration System
+- **Platform Settings** (`config.json`):
+  ```json
+  {
+    "platforms": {
+      "twitter": {
+        "enabled": true,
+        "rate_limits": {
+          "tweets_per_hour": 5,
+          "min_delay_between_actions": 30
+        }
+      }
+    }
+  }
+  ```
 
-1. **Rate Limiting**: Respect platform-specific rate limits
-2. **Error Handling**: Implement proper recovery mechanisms
-3. **Monitoring**: Regular log review and status checks
-4. **Testing**: Thorough testing before deployment
-5. **Security**: Secure credential management
+- **Personality Settings** (`personalities/*.json`):
+  ```json
+  {
+    "name": "crypto_researcher",
+    "platform_settings": {
+      "twitter": {
+        "tweet_style": "informative",
+        "interaction_style": "academic_analytical"
+      }
+    }
+  }
+  ```
 
-## Requirements
+## 🛠 Developer Guide
 
-- Python 3.13+
-- Chrome browser (for Twitter)
-- SQLite
-- Platform-specific API access
-- OpenAI API key (GPT-4)
+### Project Structure
+```
+FlavumHive/
+├── platforms/           # Platform-specific implementations
+│   ├── twitter/        # Twitter automation
+│   └── reddit/         # Reddit API integration
+├── personalities/      # AI personality configurations
+├── utils/             # Shared utilities
+├── continuous_twitter_bot.py  # Twitter bot entry
+├── main.py            # Multi-platform entry
+└── config.json        # Global configuration
+```
 
-## License
+### Key Components
 
-MIT License - See [LICENSE](LICENSE) file
+1. **Platform Handlers**
+   - `TwitterHandler`: Browser automation using Selenium
+   - `RedditHandler`: PRAW-based Reddit API integration
+   - Each handler implements:
+     - Authentication
+     - Content generation
+     - Rate limiting
+     - Error recovery
 
-## Security
+2. **Personality Manager**
+   - Loads personality configurations
+   - Manages personality switching
+   - Provides context for AI responses
 
-- Never commit credentials to the repository
-- Use environment variables for sensitive data
-- Regularly rotate API keys and passwords
-- Monitor for suspicious activity
+3. **Database Integration**
+   - SQLite-based storage
+   - Tracks:
+     - Post history
+     - Interaction states
+     - Rate limit compliance
 
-## Contributing
+### Common Operations
+
+1. **Managing Bots**:
+   ```bash
+   # Start Twitter bot in background
+   nohup python continuous_twitter_bot.py &
+   
+   # Check bot status
+   python manage_bot.py status
+   
+   # Stop running bots
+   python manage_bot.py stop
+   ```
+
+2. **Monitoring**:
+   - Log files: `twitter_bot.log`, `bot.log`
+   - Debug screenshots: `debug_twitter/`
+   - Status file: `bot_status.json`
+
+3. **Testing**:
+   ```bash
+   # Run integration tests
+   python run_integrated_test.py
+   
+   # Test specific platform
+   python test_twitter_integration.py
+   python test_reddit_integration.py
+   ```
+
+## 🔧 Customization
+
+### Adding New Personalities
+1. Create new personality file in `personalities/`
+2. Define platform-specific behaviors
+3. Update `config.json` to enable
+
+### Modifying Rate Limits
+```json
+{
+  "platforms": {
+    "twitter": {
+      "rate_limits": {
+        "tweets_per_hour": 10,  // Increase tweet frequency
+        "min_delay_between_actions": 45  // Increase delay
+      }
+    }
+  }
+}
+```
+
+### Custom Content Generation
+- Modify `generate_tweet_content()` in platform handlers
+- Adjust personality prompts in personality JSON files
+- Configure OpenAI parameters in handlers
+
+## 📊 Monitoring & Maintenance
+
+### Health Checks
+- Monitor `bot_status.json` for current state
+- Check log files for errors
+- Review debug screenshots for UI issues
+
+### Common Issues
+1. **Rate Limiting**: Adjust in `config.json`
+2. **Authentication**: Check `.env` credentials
+3. **Browser Issues**: Clear `debug_twitter/` and restart
+
+### Best Practices
+1. Regular log rotation
+2. Backup database files
+3. Monitor API usage
+4. Test changes in dry-run mode
+
+## 🔐 Security Considerations
+
+1. **Credential Management**
+   - Use environment variables
+   - Regular key rotation
+   - Secure storage practices
+
+2. **Rate Limiting**
+   - Platform-specific limits
+   - Gradual ramp-up
+   - Anti-spam measures
+
+3. **Error Handling**
+   - Graceful degradation
+   - Automatic recovery
+   - Alert systems
+
+## 📚 Additional Resources
+
+- [Detailed Documentation](../flavumhive-documentation)
+- [API Reference](../flavumhive-documentation/docs/api)
+- [Contributing Guidelines](CONTRIBUTING.md)
+- [Security Policy](SECURITY.md)
+
+## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+2. Create feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📝 License
+
+MIT License - See [LICENSE](LICENSE) file
