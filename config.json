@@ -49,7 +49,7 @@
                 "allow_interactions": true,
                 "max_interaction_depth": 2
             },
-            "target_subreddits": ["RedHarmonyAI"],
+            "target_subreddits": ["FlavumHiveFramework"],
             "rate_limits": {
                 "posts_per_day": 10,
                 "comments_per_day": 50,
