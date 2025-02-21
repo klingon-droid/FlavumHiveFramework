@@ -8,7 +8,7 @@ from utils.db_utils import init_db_connection
 
 class ElizaHandler:
     def __init__(self, config_path: str = "config.json"):
-        self.config = self._load_config(config_path)
+        self.config = self._load_config(config_path)['platforms']['eliza']
         self.active_sessions = {}
         self.db_path = os.getenv("DB_PATH", "reddit_bot.db")
 
@@ -19,7 +19,7 @@ class ElizaHandler:
     def create_session(self, user_id: str, personality_type: Optional[str] = None) -> str:
         """Create a new chat session"""
         session_id = str(uuid.uuid4())
-        personality = personality_type or self.config['eliza_settings']['personality_mapping']['default']
+        personality = personality_type or self.config['personality_mapping']['default']
         
         conn = init_db_connection(self.db_path)
         c = conn.cursor()
@@ -32,7 +32,7 @@ class ElizaHandler:
                      (session_id, user_id, personality, now, now))
             
             # Get initial message based on personality
-            initial_msg = self.config['eliza_settings']['personality_mapping'][personality]['initial_message']
+            initial_msg = self.config['personality_mapping'][personality]['initial_message']
             
             c.execute('''INSERT INTO eliza_messages
                         (session_id, message_type, content, timestamp)
@@ -163,7 +163,7 @@ class ElizaHandler:
     def cleanup_inactive_sessions(self, timeout_seconds: int = None) -> int:
         """Clean up inactive sessions"""
         if timeout_seconds is None:
-            timeout_seconds = self.config['eliza_settings']['session_timeout']
+            timeout_seconds = self.config['session_timeout']
             
         conn = init_db_connection(self.db_path)
         c = conn.cursor()

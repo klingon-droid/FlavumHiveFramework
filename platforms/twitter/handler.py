@@ -23,6 +23,16 @@ from .tweet import Tweet
 
 logger = logging.getLogger(__name__)
 
+# Add diagnostic logging for imports
+def _check_dependency(module_name: str):
+    try:
+        __import__(module_name)
+        logger.info(f"Successfully imported {module_name}")
+        return True
+    except ImportError as e:
+        logger.error(f"Failed to import {module_name}: {str(e)}")
+        return False
+
 class TwitterHandler:
     """Handler for Twitter platform interactions"""
     
@@ -30,13 +40,30 @@ class TwitterHandler:
         """Initialize Twitter handler"""
         logger.info("Initializing Twitter handler")
         
+        # Check dependencies before proceeding
+        logger.info("Checking critical dependencies...")
+        dependencies = [
+            'selenium',
+            'webdriver_manager',
+            'psutil',
+            'openai'
+        ]
+        missing_deps = [dep for dep in dependencies if not _check_dependency(dep)]
+        if missing_deps:
+            raise ImportError(f"Missing required dependencies: {', '.join(missing_deps)}")
+        
         # Log Python version and environment
         import sys
         logger.info(f"Python version: {sys.version}")
         logger.info(f"Operating system: {sys.platform}")
         
+        # Log environment variables (safely)
+        logger.info("Environment variable check:")
+        env_vars = ['TWITTER_USERNAME', 'TWITTER_PASSWORD', 'TWITTER_EMAIL', 'TWITTER_DRY_RUN']
+        for var in env_vars:
+            logger.info(f"{var} is {'set' if os.getenv(var) else 'not set'}")
+        
         # Log current working directory and permissions
-        import os
         logger.info(f"Current working directory: {os.getcwd()}")
         try:
             logger.info(f"Current directory permissions: {oct(os.stat('.').st_mode)[-3:]}")

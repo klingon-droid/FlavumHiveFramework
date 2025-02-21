@@ -4,30 +4,43 @@ import praw
 import json
 import os
 import logging
+import sqlite3
 from datetime import datetime
 from typing import Dict, Optional, List
+import threading
+from contextlib import contextmanager
 
 from utils.db_utils import init_db_connection
 from utils.personality_manager import PersonalityManager
 from utils.openai_utils import get_openai_response
+from utils.post import generate_post_content, generate_title, get_appropriate_flair
 
 logger = logging.getLogger(__name__)
 
 class RedditHandler:
     def __init__(self, personality_manager: PersonalityManager, config_path: str = "config.json"):
-        logger.info("Initializing Reddit handler")
+        self._thread_local = threading.local()
+        self._init_thread_state()
+        thread_id = threading.get_ident()
+        logging.info(f"[Thread Lifecycle] Handler initialized in thread {thread_id}")
+        
         try:
+            logger.info(f"Current working directory: {os.getcwd()}")
+            logger.info(f"Using config path: {os.path.abspath(config_path)}")
+            
             self.config = self._load_config(config_path)['platforms']['reddit']
             if not self.config['enabled']:
                 raise ValueError("Reddit platform is not enabled in config")
             logger.info("Config loaded successfully")
+            
         except Exception as e:
-            logger.error(f"Failed to load config: {str(e)}")
+            logger.error(f"Failed to load config: {str(e)}", exc_info=True)
             raise
 
         self.personality_manager = personality_manager
-        self.db_path = os.getenv("DB_PATH", "bot.db")  # Use bot.db as default
-        logger.info(f"Using database path: {self.db_path}")
+        self.db_path = os.getenv("DB_PATH", "bot.db")
+        logger.info(f"Using database path in handler: {self.db_path}")
+        
         self.active_personality = None
         self._load_active_personality()
         
@@ -44,9 +57,122 @@ class RedditHandler:
             
             self.reddit = self._init_reddit()
             logger.info("Reddit API client initialized successfully")
+            
+            # Test Reddit connection
+            username = self.reddit.user.me().name
+            logger.info(f"Successfully authenticated as: {username}")
+            
         except Exception as e:
-            logger.error(f"Failed to initialize Reddit API client: {str(e)}")
+            logger.error(f"Failed to initialize Reddit API client: {str(e)}", exc_info=True)
             raise
+
+    def _init_thread_state(self):
+        """Initialize thread-local state"""
+        self._thread_local.connection_thread_id = None
+        self._thread_local.connection_active = False
+        self._thread_local.transaction_count = 0
+        self._thread_local.last_transaction_id = 0
+
+    @property
+    def next_transaction_id(self):
+        """Get next transaction ID for this thread"""
+        if not hasattr(self._thread_local, 'last_transaction_id'):
+            self._thread_local.last_transaction_id = 0
+        self._thread_local.last_transaction_id += 1
+        return self._thread_local.last_transaction_id
+
+    @property
+    def db_conn(self):
+        """Get thread-local database connection"""
+        thread_id = threading.get_ident()
+        if not hasattr(self._thread_local, 'db_conn'):
+            logging.info(f"[Thread State] Creating new connection in thread {thread_id} (No previous connection)")
+            self._init_thread_state()
+            self._thread_local.db_conn = init_db_connection(self.db_path)
+            self._thread_local.connection_thread_id = thread_id
+            self._thread_local.connection_active = True
+            logging.info(f"[Thread State] Connection established in thread {thread_id} (State: Active=True, Transactions=0)")
+        elif self._thread_local.connection_thread_id != thread_id:
+            old_thread = self._thread_local.connection_thread_id
+            logging.info(f"[Thread Transition] Moving connection from thread {old_thread} to {thread_id}")
+            logging.info(f"[Thread State] Old connection state - Active={self._thread_local.connection_active}, Transactions={self._thread_local.transaction_count}")
+            self._cleanup_thread()
+            self._init_thread_state()
+            self._thread_local.db_conn = init_db_connection(self.db_path)
+            self._thread_local.connection_thread_id = thread_id
+            self._thread_local.connection_active = True
+            logging.info(f"[Thread State] New connection established in thread {thread_id}")
+        return self._thread_local.db_conn
+
+    @property
+    def db_cursor(self):
+        """Get thread-local database cursor"""
+        if not hasattr(self._thread_local, 'db_cursor'):
+            self._thread_local.db_cursor = self.db_conn.cursor()
+        return self._thread_local.db_cursor
+
+    @contextmanager
+    def get_db_connection(self):
+        """Context manager for database operations"""
+        thread_id = threading.get_ident()
+        transaction_id = self.next_transaction_id
+        
+        # Ensure thread state is initialized
+        if not hasattr(self._thread_local, 'transaction_count'):
+            self._init_thread_state()
+        
+        self._thread_local.transaction_count += 1
+        logging.info(f"[Transaction] Starting transaction {transaction_id} in thread {thread_id} (Total active: {self._thread_local.transaction_count})")
+        
+        try:
+            conn = self.db_conn
+            cursor = self.db_cursor
+            logging.info(f"[Connection State] Using connection in thread {thread_id} (Active={self._thread_local.connection_active}, Transactions={self._thread_local.transaction_count})")
+            yield conn, cursor
+        except Exception as e:
+            logging.error(f"[Transaction Error] Error in transaction {transaction_id} in thread {thread_id}: {str(e)}")
+            if hasattr(self._thread_local, 'db_conn'):
+                self._thread_local.db_conn.rollback()
+                logging.info(f"[Transaction] Rolled back transaction {transaction_id} in thread {thread_id}")
+            raise
+        else:
+            if hasattr(self._thread_local, 'db_conn'):
+                self._thread_local.db_conn.commit()
+                logging.info(f"[Transaction] Committed transaction {transaction_id} in thread {thread_id}")
+        finally:
+            self._thread_local.transaction_count = max(0, self._thread_local.transaction_count - 1)
+            logging.info(f"[Transaction] Completed transaction {transaction_id} in thread {thread_id} (Remaining active: {self._thread_local.transaction_count})")
+            
+            # Consider cleanup if no active transactions
+            if self._thread_local.transaction_count == 0:
+                logging.info(f"[Connection State] No active transactions in thread {thread_id}, marking for cleanup")
+                self._thread_local.connection_active = False
+
+    def _cleanup_thread(self):
+        """Clean up thread-local resources"""
+        thread_id = threading.get_ident()
+        transaction_count = getattr(self._thread_local, 'transaction_count', 0)
+        connection_active = getattr(self._thread_local, 'connection_active', False)
+        
+        logging.info(f"[Cleanup] Starting cleanup for thread {thread_id} (Active={connection_active}, Transactions={transaction_count})")
+        
+        if hasattr(self._thread_local, 'db_cursor'):
+            logging.info(f"[Cleanup] Closing cursor in thread {thread_id}")
+            self._thread_local.db_cursor.close()
+            delattr(self._thread_local, 'db_cursor')
+        
+        if hasattr(self._thread_local, 'db_conn'):
+            if transaction_count > 0:
+                logging.warning(f"[Cleanup] Cleaning up connection with {transaction_count} active transactions in thread {thread_id}")
+            logging.info(f"[Cleanup] Closing connection in thread {thread_id}")
+            self._thread_local.db_conn.close()
+            self._init_thread_state()
+            delattr(self._thread_local, 'db_conn')
+
+    def __del__(self):
+        """Destructor to ensure cleanup"""
+        if hasattr(self, '_thread_local'):
+            self._cleanup_thread()
 
     def _load_active_personality(self):
         """Load the active personality from config"""
@@ -88,77 +214,222 @@ class RedditHandler:
             password=os.getenv('REDDIT_PASSWORD')
         )
 
-    def process_subreddits(self):
+    def process_subreddits(self, commenters_config: Dict = None):
         """Process configured subreddits"""
-        logger.info("Starting subreddit processing")
-        conn = init_db_connection(self.db_path)
-        logger.info(f"Database connection established: {self.db_path}")
+        thread_id = threading.get_ident()
+        logging.info(f"[Process] Starting subreddit processing in thread {thread_id}")
         
         try:
-            c = conn.cursor()
-            
-            # Verify database state
-            c.execute("PRAGMA table_info(posts)")
-            columns = c.fetchall()
-            logger.info(f"Posts table columns: {[col[1] for col in columns]}")
-            
-            for subreddit_name in self.config.get('target_subreddits', ['RedHarmonyAI']):
-                logger.info(f"Processing subreddit: {subreddit_name}")
-                subreddit = self.reddit.subreddit(subreddit_name)
-                
-                # Process new posts
-                for submission in subreddit.new(limit=10):
-                    # Check if post already processed
-                    c.execute("SELECT id FROM posts WHERE post_id = ?", (submission.id,))
-                    if not c.fetchone():
-                        logger.info(f"Processing new post: {submission.id}")
-                        try:
-                            # Store new post
-                            now = datetime.now()
-                            c.execute('''INSERT INTO posts 
-                                        (platform, post_id, username, subreddit, post_title, post_content, timestamp)
-                                        VALUES (?, ?, ?, ?, ?, ?, ?)''',
-                                     ('reddit', submission.id, submission.author.name,
-                                      subreddit_name, submission.title, submission.selftext, now))
-                            
-                            # Update platform stats
-                            c.execute('''UPDATE platform_stats 
-                                        SET total_interactions = total_interactions + 1,
-                                            last_activity = ?
-                                        WHERE platform = 'reddit' ''',
-                                     (now,))
-                            
-                            logger.info(f"Successfully stored post {submission.id}")
-                            
-                            # Process comments if needed
-                            if self.config['personality']['settings']['auto_reply']:
-                                self._process_comments(submission, c)
-                                
-                        except Exception as e:
-                            logger.error(f"Error processing post {submission.id}: {str(e)}")
-                            continue
+            with self.get_db_connection() as (conn, cursor):
+                # Test connection
+                cursor.execute("SELECT COUNT(*) FROM posts")
+                count = cursor.fetchone()[0]
+                logger.info(f"Current post count in thread {thread_id}: {count}")
+
+                for subreddit_name in self.config.get('target_subreddits', ['RedHarmonyAI']):
+                    logger.info(f"Processing subreddit: {subreddit_name}")
                     
-                    conn.commit()
-                    logger.debug(f"Committed changes for subreddit {subreddit_name}")
-                
+                    try:
+                        subreddit = self.reddit.subreddit(subreddit_name)
+                        logger.info(f"Successfully accessed subreddit: {subreddit_name}")
+                        
+                        # Generate and submit a new post
+                        personality = self.active_personality or self.personality_manager.get_random_personality('reddit')
+                        if personality:
+                            logger.info(f"Generating post as personality: {personality['name']}")
+                            post_content = generate_post_content(personality)
+                            if post_content:
+                                title = generate_title(post_content, personality)
+                                flair_id = get_appropriate_flair(self.reddit, subreddit_name)
+                                
+                                submission = subreddit.submit(title=title, selftext=post_content, flair_id=flair_id)
+                                logger.info(f"Created new post: {submission.id}")
+                                
+                                # Store the post
+                                now = datetime.now()
+                                cursor.execute('''INSERT INTO posts 
+                                            (platform, post_id, username, subreddit, post_title, post_content, 
+                                             personality_id, personality_context, timestamp)
+                                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                                         ('reddit', submission.id, submission.author.name,
+                                          subreddit_name, title, post_content, personality['name'],
+                                          json.dumps({'name': personality['name'], 'style': personality['style']['post']}),
+                                          now))
+                                
+                                # Handle commenters if enabled
+                                if commenters_config and commenters_config.get('enabled', False):
+                                    self._handle_commenters(submission, commenters_config)
+                        
+                        # Process existing posts
+                        for submission in subreddit.new(limit=5):
+                            logger.debug(f"Processing existing submission: {submission.id}")
+                            cursor.execute("SELECT id FROM posts WHERE post_id = ?", (submission.id,))
+                            if not cursor.fetchone():
+                                logger.info(f"Processing new post: {submission.id}")
+                                try:
+                                    now = datetime.now()
+                                    cursor.execute('''INSERT INTO posts 
+                                                (platform, post_id, username, subreddit, post_title, post_content, timestamp)
+                                                VALUES (?, ?, ?, ?, ?, ?, ?)''',
+                                             ('reddit', submission.id, submission.author.name,
+                                              subreddit_name, submission.title, submission.selftext, now))
+                                    
+                                    logger.info(f"Successfully stored post {submission.id}")
+                                    
+                                    # Handle commenters for existing posts
+                                    if commenters_config and commenters_config.get('enabled', False):
+                                        self._handle_commenters(submission, commenters_config)
+                                        
+                                except Exception as e:
+                                    logger.error(f"Error processing post {submission.id}: {str(e)}", exc_info=True)
+                                    continue
+                            
+                            conn.commit()
+                            logger.debug(f"Committed changes for subreddit {subreddit_name}")
+                        
+                    except Exception as e:
+                        logger.error(f"Error processing subreddit {subreddit_name}: {str(e)}", exc_info=True)
+                        continue
+                    
         except Exception as e:
-            logger.error(f"Error in process_subreddits: {str(e)}")
-            conn.rollback()
-            logger.info("Changes rolled back due to error")
+            logging.error(f"[Process Error] Failed in thread {thread_id}: {str(e)}")
             raise
         finally:
-            conn.close()
-            logger.info("Database connection closed")
+            if hasattr(self._thread_local, 'connection_active'):
+                logging.info(f"[Process] Ending subreddit processing in thread {thread_id} (Active={self._thread_local.connection_active}, Transactions={self._thread_local.transaction_count})")
+            if hasattr(self._thread_local, 'connection_active') and not self._thread_local.connection_active:
+                self._cleanup_thread()
 
-    def _process_comments(self, submission: praw.models.Submission, cursor) -> None:
+    def _handle_commenters(self, submission: praw.models.Submission, config: Dict) -> None:
+        """Handle commenting personalities on a submission"""
+        import random
+        
+        # Check if we should comment based on probability
+        if random.random() > config.get('comment_probability', 0.8):
+            logger.info("Skipping comments based on probability")
+            return
+            
+        # Get number of comments to generate
+        min_comments = config.get('comments_per_post', {}).get('min', 1)
+        max_comments = config.get('comments_per_post', {}).get('max', 3)
+        num_comments = random.randint(min_comments, max_comments)
+        
+        # Get available personalities
+        available_personalities = config.get('personalities', [])
+        if not available_personalities:
+            logger.warning("No commenter personalities configured")
+            return
+            
+        # Track used personalities to avoid duplicates
+        used_personalities = set()
+        parent_comments = []
+        
+        # Generate initial comments
+        for _ in range(num_comments):
+            # Get unused personality
+            remaining_personalities = [p for p in available_personalities if p not in used_personalities]
+            if not remaining_personalities:
+                break
+                
+            personality_name = random.choice(remaining_personalities)
+            personality = self.personality_manager.get_personality(personality_name)
+            if not personality:
+                continue
+                
+            used_personalities.add(personality_name)
+            
+            # Generate and post comment
+            comment_text = self.generate_comment_content(personality, submission.title, submission.selftext)
+            if comment_text:
+                try:
+                    comment = submission.reply(comment_text)
+                    parent_comments.append((comment, personality))
+                    
+                    # Store in database
+                    now = datetime.now()
+                    self.db_cursor.execute('''INSERT INTO comments 
+                                    (platform, username, comment_id, post_id, comment_content, timestamp,
+                                     personality_id, personality_context)
+                                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+                                 ('reddit', personality['name'], comment.id,
+                                  submission.id, comment_text, now,
+                                  personality['name'],
+                                  json.dumps({'name': personality['name'], 'style': personality['style']['chat']})))
+                    self.db_conn.commit()
+                except Exception as e:
+                    logger.error(f"Error posting comment: {str(e)}")
+                    continue
+        
+        # Handle interactions between commenters if enabled
+        if config.get('allow_interactions', True) and len(parent_comments) > 1:
+            self._handle_commenter_interactions(parent_comments, config)
+
+    def _handle_commenter_interactions(self, parent_comments, config: Dict) -> None:
+        """Handle interactions between commenting personalities"""
+        import random
+        
+        max_depth = config.get('max_interaction_depth', 2)
+        current_depth = 0
+        
+        while current_depth < max_depth:
+            # Randomly select a parent comment to reply to
+            if not parent_comments:
+                break
+                
+            parent_comment, parent_personality = random.choice(parent_comments)
+            
+            # Get an unused personality for the reply
+            available_personalities = [p for p in config.get('personalities', [])
+                                    if p != parent_personality['name']]
+            if not available_personalities:
+                break
+                
+            replier_name = random.choice(available_personalities)
+            replier = self.personality_manager.get_personality(replier_name)
+            if not replier:
+                continue
+            
+            # Generate and post reply
+            reply_text = self.generate_comment_content(
+                replier,
+                parent_comment.submission.title,
+                parent_comment.body,
+                is_reply=True
+            )
+            
+            if reply_text:
+                try:
+                    reply = parent_comment.reply(reply_text)
+                    
+                    # Store in database
+                    now = datetime.now()
+                    self.db_cursor.execute('''INSERT INTO comments 
+                                    (platform, username, comment_id, post_id, comment_content, timestamp,
+                                     personality_id, personality_context)
+                                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+                                 ('reddit', replier['name'], reply.id,
+                                  parent_comment.submission.id, reply_text, now,
+                                  replier['name'],
+                                  json.dumps({'name': replier['name'], 'style': replier['style']['chat']})))
+                    
+                    self.db_conn.commit()
+                    # Add this reply as a potential parent for next iteration
+                    parent_comments.append((reply, replier))
+                except Exception as e:
+                    logger.error(f"Error posting reply: {str(e)}")
+                    continue
+            
+            current_depth += 1
+
+    def _process_comments(self, submission: praw.models.Submission, cursor, forced_personality: Dict = None) -> None:
         """Process comments for a submission"""
-        # Use active personality if available
-        personality = self.active_personality or self.personality_manager.get_random_personality('reddit')
+        # Use specified personality, active personality, or get a random one
+        personality = forced_personality or self.active_personality or self.personality_manager.get_random_personality('reddit')
         if not personality:
             return
 
-        # Check reply probability
-        if not self._should_reply():
+        # Check reply probability unless using forced personality
+        if not forced_personality and not self._should_reply():
             logger.info("Skipping reply based on probability settings")
             return
 
@@ -169,6 +440,8 @@ class RedditHandler:
             return
         
         try:
+            # Add personality signature
+            comment_text = f"*Insights from **{personality['name']}** - {personality['bio'][0]}*\n\n{comment_text}"
             comment = submission.reply(comment_text)
             
             # Store comment in database
@@ -188,6 +461,8 @@ class RedditHandler:
                                 last_activity = ?
                             WHERE platform = 'reddit' ''',
                          (now,))
+            
+            logger.info(f"Successfully posted comment as {personality['name']}")
             
         except Exception as e:
             logger.error(f"Error posting comment: {str(e)}")

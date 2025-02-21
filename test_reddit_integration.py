@@ -2,8 +2,12 @@ import os
 import time
 import logging
 from datetime import datetime
+from dotenv import load_dotenv
 from platforms.reddit.handler import RedditHandler
 from utils.personality_manager import PersonalityManager
+
+# Load environment variables
+load_dotenv()
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)

@@ -17,7 +17,7 @@ def generate_post_content(personality):
     """Generate post content based on personality"""
     try:
         # Enhanced prompt to encourage more natural, flowing content
-        base_prompt = personality_manager.get_personality_prompt(personality)
+        base_prompt = personality_manager.get_personality_prompt(personality, 'reddit', is_reply=False)
         enhanced_prompt = f"""
 {base_prompt}
 

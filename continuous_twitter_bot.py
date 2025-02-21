@@ -6,10 +6,8 @@ import signal
 import sys
 import json
 from datetime import datetime, timedelta
-from platforms.twitter.handler import TwitterHandler
-from utils.personality_manager import PersonalityManager
 
-# Set up logging with rotation
+# Configure logging first
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -19,7 +17,63 @@ logging.basicConfig(
     ]
 )
 
+# Initialize logger
 logger = logging.getLogger(__name__)
+
+# Diagnostic Information
+logger.info("=== Startup Diagnostics ===")
+logger.info("Python Version: %s", sys.version)
+logger.info("Python Executable: %s", sys.executable)
+logger.info("Python Path: %s", os.pathsep.join(sys.path))
+logger.info("Working Directory: %s", os.getcwd())
+logger.info("Script Location: %s", os.path.abspath(__file__))
+
+# Virtual Environment Check
+venv_path = os.environ.get('VIRTUAL_ENV')
+logger.info("Virtual Environment: %s", venv_path if venv_path else "Not activated")
+
+# Directory Structure Check
+expected_dirs = ['platforms', 'utils']
+for dir_name in expected_dirs:
+    dir_path = os.path.join(os.path.dirname(__file__), dir_name)
+    logger.info("Directory '%s' exists: %s", dir_name, os.path.exists(dir_path))
+
+# Test env file loading
+try:
+    from dotenv import load_dotenv
+    logger.info("Attempting to load .env file...")
+    env_path = os.path.join(os.path.dirname(__file__), '.env')
+    logger.info(".env file exists: %s", os.path.exists(env_path))
+    load_dotenv()
+    logger.info("Environment after load_dotenv:")
+    logger.info("TWITTER_USERNAME present: %s", bool(os.getenv('TWITTER_USERNAME')))
+    logger.info("TWITTER_PASSWORD present: %s", bool(os.getenv('TWITTER_PASSWORD')))
+    logger.info("TWITTER_EMAIL present: %s", bool(os.getenv('TWITTER_EMAIL')))
+except Exception as e:
+    logger.error("Error loading .env: %s", str(e))
+
+# Test dependency availability and versions
+try:
+    logger.info("=== Dependency Check ===")
+    packages_to_check = ['selenium', 'webdriver_manager', 'psutil', 'openai', 'python-dotenv']
+    for package in packages_to_check:
+        try:
+            module = __import__(package)
+            version = getattr(module, '__version__', 'unknown')
+            logger.info(f"✓ {package} is available (version: {version})")
+        except ImportError as e:
+            logger.error(f"✗ {package} is missing: {str(e)}")
+except Exception as e:
+    logger.error("Error checking packages: %s", str(e))
+
+logger.info("=== End Startup Diagnostics ===")
+
+# Continue with the rest of the original imports
+try:
+    from platforms.twitter.handler import TwitterHandler
+    from utils.personality_manager import PersonalityManager
+except Exception as e:
+    logger.error("Error importing project modules: %s", str(e))
 
 class ContinuousTwitterBot:
     def __init__(self):
