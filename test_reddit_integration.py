@@ -21,11 +21,11 @@ def test_live_reddit_interaction():
         
         logger.info("Starting live Reddit interaction test...")
         
-        # 1. Create a meaningful post about RedHarmony
-        test_subreddit = "RedHarmonyAI"
-        test_title = "RedHarmony AI: Latest Development Updates and Community Discussion"
+        # 1. Create a meaningful post about FlavumHiveAI
+        test_subreddit = "FlavumHiveAI"
+        test_title = "Flavumhive AI: Latest Development Updates and Community Discussion"
         test_content = """
-Hello RedHarmony community! 👋
+Hello Flavumhive community! 👋
 
 I wanted to start a discussion about the latest developments in our AI ecosystem. Here are some key points I'd love to get your thoughts on:
 
@@ -33,7 +33,7 @@ I wanted to start a discussion about the latest developments in our AI ecosystem
 2. Community Engagement Features
 3. Cross-Platform Integration
 
-What aspects of RedHarmony's AI capabilities are you most excited about? What features would you like to see implemented in the near future?
+What aspects of Flavumhive's AI capabilities are you most excited about? What features would you like to see implemented in the near future?
 
 Looking forward to engaging with everyone in the comments! 🤖✨
         """.strip()

@@ -38,7 +38,7 @@ class PersonalityManager:
                                 "reply_probability": 0.7
                             }
                         },
-                        "target_subreddits": ["RedHarmonyAI"],
+                        "target_subreddits": ["FlavumHiveAI"],
                         "rate_limits": {
                             "posts_per_day": 10,
                             "comments_per_day": 50,
@@ -148,7 +148,7 @@ class PersonalityManager:
     def get_subreddits(self) -> List[str]:
         """Get configured target subreddits"""
         reddit_config = self.config['platforms'].get('reddit', {})
-        return reddit_config.get('target_subreddits', ['RedHarmonyAI'])
+        return reddit_config.get('target_subreddits', ['FlavumHiveAI'])
 
     def get_rate_limits(self, platform: str = 'reddit') -> Dict:
         """Get configured rate limits"""

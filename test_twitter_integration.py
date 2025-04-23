@@ -28,7 +28,7 @@ def test_live_twitter_interaction():
         logger.info("Starting live Twitter interaction test...")
         
         try:
-            # 1. Generate and post an initial tweet about RedHarmony
+            # 1. Generate and post an initial tweet about FlavumHiveAI
             logger.info("Generating tweet using personality system...")
             
             # Get the active personality
@@ -37,7 +37,7 @@ def test_live_twitter_interaction():
             
             # Context for the AI to generate relevant content
             context = """
-            RedHarmony AI Updates:
+            Flavumhive AI Updates:
             - Enhanced AI-driven market analysis
             - New community engagement features
             - Cross-platform integration improvements
