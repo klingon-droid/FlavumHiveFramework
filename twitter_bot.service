@@ -1,5 +1,5 @@
 [Unit]
-Description=RedHarmony Twitter Bot Service
+Description=Flavumhive Twitter Bot Service
 After=network.target
 
 [Service]

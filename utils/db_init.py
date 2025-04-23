@@ -18,7 +18,7 @@ def verify_table_schema(cursor, table_name):
         logger.info(f"  - Column: {name} (Type: {type_})")
     return column_names
 
-def init_database(db_path: str = "bot.db", force_recreate: bool = False):
+def initialize_database(db_path: str = "bot.db", force_recreate: bool = False):
     """Initialize database with required tables"""
     logger.info(f"Initializing database at {db_path}")
     

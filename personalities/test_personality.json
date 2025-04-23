@@ -21,7 +21,9 @@
     },
     "platform_settings": {
         "reddit": {
-            "subreddits": ["RedHarmonyAI"],
+            "subreddits": [
+                "FlavumHiveAI"
+            ],
             "post_frequency": "low",
             "interaction_style": "test_mode"
         },
@@ -81,4 +83,4 @@
         "Verify response patterns",
         "Report unexpected behavior"
     ]
-} 
+}

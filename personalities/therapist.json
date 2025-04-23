@@ -21,7 +21,9 @@
     },
     "platform_settings": {
         "reddit": {
-            "subreddits": ["RedHarmonyAI"],
+            "subreddits": [
+                "FlavumHiveAI"
+            ],
             "post_frequency": "medium",
             "interaction_style": "supportive_professional"
         },
@@ -82,4 +84,4 @@
         "Respect user privacy and confidentiality",
         "Encourage self-reflection"
     ]
-} 
+}

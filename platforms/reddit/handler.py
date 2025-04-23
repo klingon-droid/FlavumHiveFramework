@@ -226,7 +226,7 @@ class RedditHandler:
                 count = cursor.fetchone()[0]
                 logger.info(f"Current post count in thread {thread_id}: {count}")
 
-                for subreddit_name in self.config.get('target_subreddits', ['RedHarmonyAI']):
+                for subreddit_name in self.config.get('target_subreddits', ['FlavumHiveAI']):
                     logger.info(f"Processing subreddit: {subreddit_name}")
                     
                     try:
