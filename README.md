@@ -5,8 +5,9 @@ FlavumHive is an advanced social media orchestration framework that enables inte
 ## 🚀 Quick Start
 
 1. **Clone & Setup**:
+
    ```bash
-   git clone https://github.com/yourusername/flavumhive.git
+   git clone https://github.com/klingon-droid/FlavumHiveFramework.git
    cd flavumhive
    python -m venv venv
    source venv/bin/activate  # Linux/MacOS
@@ -14,6 +15,7 @@ FlavumHive is an advanced social media orchestration framework that enables inte
    ```
 
 2. **Environment Configuration**:
+
    ```bash
    cp .env.example .env
    # Edit .env with your credentials:
@@ -23,13 +25,14 @@ FlavumHive is an advanced social media orchestration framework that enables inte
    ```
 
 3. **Start the Bots**:
+
    ```bash
    # Start Twitter Bot
    python continuous_twitter_bot.py
-   
+
    # Start Reddit Bot
    python main.py --platform reddit
-   
+
    # Monitor Logs
    tail -f twitter_bot.log  # Twitter logs
    tail -f bot.log         # General logs
@@ -38,7 +41,9 @@ FlavumHive is an advanced social media orchestration framework that enables inte
 ## 🎯 Core Functionalities
 
 ### 1. Multi-Platform Integration
-- **Twitter/X**: 
+
+- **Twitter/X**:
+
   - Automated posting with personality-driven content
   - Thread creation and management
   - Real-time engagement monitoring
@@ -51,6 +56,7 @@ FlavumHive is an advanced social media orchestration framework that enables inte
   - Rate-limited interactions (2 posts/hour, 5 comments/hour default)
 
 ### 2. AI Personality System
+
 - **Available Personalities**:
   - `crypto_researcher`: Academic analysis and research
   - `defi_skeptic`: Critical analysis and risk assessment
@@ -61,7 +67,9 @@ FlavumHive is an advanced social media orchestration framework that enables inte
     - Configurable response types
 
 ### 3. Configuration System
+
 - **Platform Settings** (`config.json`):
+
   ```json
   {
     "platforms": {
@@ -92,6 +100,7 @@ FlavumHive is an advanced social media orchestration framework that enables inte
 ## 🛠 Developer Guide
 
 ### Project Structure
+
 ```
 FlavumHive/
 ├── platforms/           # Platform-specific implementations
@@ -107,6 +116,7 @@ FlavumHive/
 ### Key Components
 
 1. **Platform Handlers**
+
    - `TwitterHandler`: Browser automation using Selenium
    - `RedditHandler`: PRAW-based Reddit API integration
    - Each handler implements:
@@ -116,6 +126,7 @@ FlavumHive/
      - Error recovery
 
 2. **Personality Manager**
+
    - Loads personality configurations
    - Manages personality switching
    - Provides context for AI responses
@@ -130,27 +141,30 @@ FlavumHive/
 ### Common Operations
 
 1. **Managing Bots**:
+
    ```bash
    # Start Twitter bot in background
    nohup python continuous_twitter_bot.py &
-   
+
    # Check bot status
    python manage_bot.py status
-   
+
    # Stop running bots
    python manage_bot.py stop
    ```
 
 2. **Monitoring**:
+
    - Log files: `twitter_bot.log`, `bot.log`
    - Debug screenshots: `debug_twitter/`
    - Status file: `bot_status.json`
 
 3. **Testing**:
+
    ```bash
    # Run integration tests
    python run_integrated_test.py
-   
+
    # Test specific platform
    python test_twitter_integration.py
    python test_reddit_integration.py
@@ -159,18 +173,20 @@ FlavumHive/
 ## 🔧 Customization
 
 ### Adding New Personalities
+
 1. Create new personality file in `personalities/`
 2. Define platform-specific behaviors
 3. Update `config.json` to enable
 
 ### Modifying Rate Limits
+
 ```json
 {
   "platforms": {
     "twitter": {
       "rate_limits": {
-        "tweets_per_hour": 10,  // Increase tweet frequency
-        "min_delay_between_actions": 45  // Increase delay
+        "tweets_per_hour": 10, // Increase tweet frequency
+        "min_delay_between_actions": 45 // Increase delay
       }
     }
   }
@@ -178,6 +194,7 @@ FlavumHive/
 ```
 
 ### Custom Content Generation
+
 - Modify `generate_tweet_content()` in platform handlers
 - Adjust personality prompts in personality JSON files
 - Configure OpenAI parameters in handlers
@@ -185,16 +202,19 @@ FlavumHive/
 ## 📊 Monitoring & Maintenance
 
 ### Health Checks
+
 - Monitor `bot_status.json` for current state
 - Check log files for errors
 - Review debug screenshots for UI issues
 
 ### Common Issues
+
 1. **Rate Limiting**: Adjust in `config.json`
 2. **Authentication**: Check `.env` credentials
 3. **Browser Issues**: Clear `debug_twitter/` and restart
 
 ### Best Practices
+
 1. Regular log rotation
 2. Backup database files
 3. Monitor API usage
@@ -203,11 +223,13 @@ FlavumHive/
 ## 🔐 Security Considerations
 
 1. **Credential Management**
+
    - Use environment variables
    - Regular key rotation
    - Secure storage practices
 
 2. **Rate Limiting**
+
    - Platform-specific limits
    - Gradual ramp-up
    - Anti-spam measures
