@@ -9,7 +9,7 @@ import logging
 from typing import Dict, List
 from dotenv import load_dotenv, find_dotenv
 
-from utils.db_init import init_database
+from utils.db_init import initialize_database as init_database
 from utils.post import generate_posts
 from utils.comment import generate_comments
 from utils.personality_manager import PersonalityManager
